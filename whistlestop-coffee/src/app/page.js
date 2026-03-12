@@ -1,5 +1,5 @@
 import Link from 'next/link';
-//import ThemeToggle from '@/components/theme-toggle';
+import ThemeToggle from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -23,7 +23,10 @@ const authLinks = [
 function LinkButton({ href, label }) {
   return (
     <Link href={href} className="block">
-      <Button variant="secondary" className="w-full justify-between">
+      <Button
+        variant="outline"
+        className="bg-background/40 w-full justify-between backdrop-blur-sm"
+      >
         <span>{label}</span>
         <span className="text-xs opacity-70">Open</span>
       </Button>
@@ -44,10 +47,11 @@ export default function Home() {
               Customer ordering and staff order management scaffold.
             </p>
           </div>
+          <ThemeToggle />
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <Card className="shadow-sm">
+          <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-md">
             <CardHeader>
               <CardTitle>Customer</CardTitle>
             </CardHeader>
@@ -58,7 +62,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm">
+          <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-md">
             <CardHeader>
               <CardTitle>Staff</CardTitle>
             </CardHeader>
@@ -67,7 +71,7 @@ export default function Home() {
                 <LinkButton key={l.href} href={l.href} label={l.label} />
               ))}
 
-              <div className="mt-4 border-t pt-4">
+              <div className="border-border/60 mt-4 border-t pt-4">
                 <div className="text-muted-foreground mb-2 text-xs font-medium">
                   Authentication
                 </div>
