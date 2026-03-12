@@ -1,90 +1,115 @@
 import Link from 'next/link';
-import ThemeToggle from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Coffee,
+  ClipboardList,
+  Gift,
+  LayoutDashboard,
+  Archive,
+  LogIn,
+  UserPlus,
+  Home as HomeIcon,
+} from 'lucide-react';
 
-const customerLinks = [
-  { href: '/customer/menu', label: 'Menu' },
-  { href: '/customer/order', label: 'Place Order' },
-  { href: '/customer/status', label: 'Order Status' },
-  { href: '/customer/loyalty', label: 'Loyalty' },
-];
-
-const staffLinks = [
-  { href: '/staff/dashboard', label: 'Dashboard' },
-  { href: '/staff/archive', label: 'Archive' },
-];
-
-const authLinks = [
-  { href: '/auth/login', label: 'Login' },
-  { href: '/auth/register', label: 'Register' },
-];
-
-function LinkButton({ href, label }) {
+function QuickCard({ href, title, subtitle, icon: Icon }) {
   return (
     <Link href={href} className="block">
-      <Button
-        variant="outline"
-        className="bg-background/40 w-full justify-between backdrop-blur-sm"
-      >
-        <span>{label}</span>
-        <span className="text-xs opacity-70">Open</span>
-      </Button>
+      <Card className="border-border/60 bg-card/70 hover:bg-card/90 coffee-card transition">
+        <CardContent className="flex items-center gap-3 p-4">
+          <div className="bg-primary/15 flex h-10 w-10 items-center justify-center rounded-xl">
+            <Icon className="text-primary h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium">{title}</div>
+            <div className="text-muted-foreground text-xs">{subtitle}</div>
+          </div>
+        </CardContent>
+      </Card>
     </Link>
   );
 }
 
 export default function Home() {
   return (
-    <main className="coffee-bg min-h-screen">
-      <div className="mx-auto max-w-4xl px-4 py-10">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">
-              Whistlestop Coffee Hut
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Customer ordering and staff order management scaffold.
-            </p>
+    <section className="grid gap-3 md:grid-cols-2">
+      <Card className="border-border/60 bg-card/70 coffee-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Customer</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <QuickCard
+            href="/customer/order"
+            title="Start an order"
+            subtitle="Pick your drinks and pickup time"
+            icon={Coffee}
+          />
+          <QuickCard
+            href="/customer/menu"
+            title="Browse the menu"
+            subtitle="See prices and sizes"
+            icon={ClipboardList}
+          />
+          <QuickCard
+            href="/customer/status"
+            title="Track your order"
+            subtitle="Accepted, in progress, ready"
+            icon={HomeIcon}
+          />
+          <QuickCard
+            href="/customer/loyalty"
+            title="Loyalty"
+            subtitle="9 stamps then 10th is free"
+            icon={Gift}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60 bg-card/70 coffee-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Staff</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <QuickCard
+            href="/staff/dashboard"
+            title="Orders dashboard"
+            subtitle="View and update statuses"
+            icon={LayoutDashboard}
+          />
+          <QuickCard
+            href="/staff/archive"
+            title="Archive"
+            subtitle="Collected and paid orders"
+            icon={Archive}
+          />
+
+          <div className="border-border/60 bg-background/40 mt-2 rounded-2xl border p-4">
+            <div className="text-muted-foreground text-xs font-medium">
+              Authentication
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <Link href="/auth/login">
+                <Button
+                  variant="outline"
+                  className="bg-card/60 w-full justify-between"
+                >
+                  <span>Login</span>
+                  <LogIn className="h-4 w-4 opacity-70" />
+                </Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button
+                  variant="outline"
+                  className="bg-card/60 w-full justify-between"
+                >
+                  <span>Register</span>
+                  <UserPlus className="h-4 w-4 opacity-70" />
+                </Button>
+              </Link>
+            </div>
           </div>
-          <ThemeToggle />
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-md">
-            <CardHeader>
-              <CardTitle>Customer</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {customerLinks.map((l) => (
-                <LinkButton key={l.href} href={l.href} label={l.label} />
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-md">
-            <CardHeader>
-              <CardTitle>Staff</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {staffLinks.map((l) => (
-                <LinkButton key={l.href} href={l.href} label={l.label} />
-              ))}
-
-              <div className="border-border/60 mt-4 border-t pt-4">
-                <div className="text-muted-foreground mb-2 text-xs font-medium">
-                  Authentication
-                </div>
-                <div className="grid gap-2">
-                  {authLinks.map((l) => (
-                    <LinkButton key={l.href} href={l.href} label={l.label} />
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </main>
+        </CardContent>
+      </Card>
+    </section>
   );
 }
