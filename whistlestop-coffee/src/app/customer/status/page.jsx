@@ -1,3 +1,3 @@
 export default function StatusPage() {
-  return <div className="p-6">Order Status</div>;
+  return <div className="p-6">Order Tracking</div>;
 }
