@@ -102,8 +102,6 @@ export default function MenuPage() {
               variant="outline"
               className="w-full"
               onClick={() => {
-                e.preventDefault();
-                e.stopPropagation();
                 addItem({
                   menuItemId: item.id,
                   name: item.name,
