@@ -73,9 +73,8 @@ export default function AppShell({
 
   // Load the current user and cart once on mount from the real backend
   useEffect(() => {
-    async function loadAppShellData() {
+    async function loadUser() {
       try {
-        // Load the current logged-in user
         const userRes = await fetch('/api/auth/me');
         const userData = await userRes.json();
 
@@ -87,9 +86,10 @@ export default function AppShell({
       } catch {
         setUser(null);
       }
+    }
 
+    async function loadCartCount() {
       try {
-        // Load the current user's cart so the badge count stays in sync
         const cartRes = await fetch('/api/cart');
         const cartData = await cartRes.json();
 
@@ -107,7 +107,18 @@ export default function AppShell({
       }
     }
 
-    loadAppShellData();
+    function handleCartUpdated() {
+      loadCartCount();
+    }
+
+    loadUser();
+    loadCartCount();
+
+    window.addEventListener('cart-updated', handleCartUpdated);
+
+    return () => {
+      window.removeEventListener('cart-updated', handleCartUpdated);
+    };
   }, [pathname]);
 
   /**
@@ -127,7 +138,12 @@ export default function AppShell({
         ? '/customer/account'
         : '/auth/login';
 
-  const homeHref = user ? '/customer/menu' : '/auth/login';
+  const homeHref =
+    user?.role === 'STAFF' || user?.role === 'ADMIN'
+      ? '/staff/dashboard'
+      : user
+        ? '/customer/menu'
+        : '/auth/login';
 
   return (
     <main className="coffee-bg min-h-screen">

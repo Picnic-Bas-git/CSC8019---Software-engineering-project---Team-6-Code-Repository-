@@ -2,6 +2,7 @@
 
 // React hooks for loading and updating staff order data
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Reusable UI components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +66,7 @@ function getStatusActions(status) {
 }
 
 export default function StaffDashboardPage() {
+  const router = useRouter();
   // Holds active staff orders returned by the backend
   const [orders, setOrders] = useState([]);
 
@@ -76,6 +78,9 @@ export default function StaffDashboardPage() {
 
   // Tracks which order is currently being updated
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+  // Tracks whether logout is in progress
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   /**
    * Loads active staff orders from the backend API.
@@ -143,6 +148,24 @@ export default function StaffDashboardPage() {
     }
   }
 
+  /**
+   * Logs the current staff user out and returns to the login page.
+   */
+  async function handleLogout() {
+    try {
+      setIsLoggingOut(true);
+
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      router.push('/auth/login');
+      router.refresh();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
+
   // Calculate helpful dashboard summary counts
   const counts = useMemo(() => {
     return {
@@ -184,15 +207,23 @@ export default function StaffDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Error message */}
-      {error ? <div className="text-sm text-red-500">{error}</div> : null}
-
-      {/* Quick link to archived orders */}
-      <div className="flex justify-center">
+      {/* Quick actions for staff */}
+      <div className="flex flex-wrap justify-end gap-2">
         <Link href="/staff/archive">
           <Button variant="outline">View Archive</Button>
         </Link>
+
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+        >
+          {isLoggingOut ? 'Logging out...' : 'Log out'}
+        </Button>
       </div>
+
+      {/* Error message */}
+      {error ? <div className="text-sm text-red-500">{error}</div> : null}
 
       {/* Loading state */}
       {isLoading ? (

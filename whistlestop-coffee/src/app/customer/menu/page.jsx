@@ -142,6 +142,7 @@ export default function MenuPage() {
       }
 
       setSuccess(`${item.name} added to cart`);
+      window.dispatchEvent(new Event('cart-updated'));
     } catch {
       setError('Something went wrong while adding to cart.');
     } finally {
