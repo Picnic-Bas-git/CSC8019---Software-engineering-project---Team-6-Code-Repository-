@@ -1,20 +1,26 @@
 'use client';
-// Created this so that we can leave page.jsx under [id] as a server component
-// React hooks for memoizing derived values and managing local component state
+
+// Created this so that we can leave page.jsx under [slug] as a server component
+
+// React hooks for memoizing derived values, managing local component state,
+// and handling backend cart actions
 import { useMemo, useState } from 'react';
 
 // Reusable button component
 import { Button } from '@/components/ui/button';
 
-// Zustand cart store hook for adding items to the cart
-import { useCartStore } from '@/lib/cart-store';
-
 export default function AddToCartPanel({ item }) {
-  // Cart action used to add a selected item into the cart
-  const addItem = useCartStore((s) => s.addItem);
-
   // Check whether this menu item also supports a large size
   const hasLarge = item.prices.large != null;
+
+  // Tracks whether the add-to-cart request is in progress
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Stores any backend error while adding to cart
+  const [error, setError] = useState('');
+
+  // Stores a short success message after adding to cart
+  const [success, setSuccess] = useState('');
 
   /**
    * Build the available size options for this item.
@@ -22,19 +28,19 @@ export default function AddToCartPanel({ item }) {
    */
   const sizeOptions = useMemo(() => {
     const opts = [
-      { key: 'regular', label: 'Regular', price: item.prices.regular },
+      { key: 'REGULAR', label: 'Regular', price: item.prices.regular },
     ];
 
     // Add a large option only when a large price exists
     if (hasLarge) {
-      opts.push({ key: 'large', label: 'Large', price: item.prices.large });
+      opts.push({ key: 'LARGE', label: 'Large', price: item.prices.large });
     }
 
     return opts;
   }, [hasLarge, item.prices.large, item.prices.regular]);
 
   // Currently selected size, defaulting to regular
-  const [size, setSize] = useState('regular');
+  const [size, setSize] = useState('REGULAR');
 
   // Currently selected quantity, defaulting to 1
   const [qty, setQty] = useState(1);
@@ -48,17 +54,39 @@ export default function AddToCartPanel({ item }) {
   const total = unitPrice * qty;
 
   /**
-   * Adds the chosen item to the cart.
-   * Since the store adds one item at a time, this loops based on quantity.
+   * Adds the chosen item to the real backend cart.
+   * Sends one request with menu item id, selected size, and quantity.
    */
-  function addToCart() {
-    for (let i = 0; i < qty; i += 1) {
-      addItem({
-        menuItemId: item.id,
-        name: item.name,
-        size,
-        unitPrice,
+  async function addToCart() {
+    try {
+      setIsLoading(true);
+      setError('');
+      setSuccess('');
+
+      const res = await fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          menuItemId: item.id,
+          size,
+          quantity: qty,
+        }),
       });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to add item to cart');
+        return;
+      }
+
+      setSuccess('Added to cart');
+    } catch {
+      setError('Something went wrong while adding to cart.');
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -96,6 +124,7 @@ export default function AddToCartPanel({ item }) {
             type="button"
             variant="outline"
             size="sm"
+            disabled={isLoading}
             onClick={() => setQty((q) => Math.max(1, q - 1))}
           >
             -
@@ -109,6 +138,7 @@ export default function AddToCartPanel({ item }) {
             type="button"
             variant="outline"
             size="sm"
+            disabled={isLoading}
             onClick={() => setQty((q) => q + 1)}
           >
             +
@@ -116,9 +146,20 @@ export default function AddToCartPanel({ item }) {
         </div>
       </div>
 
+      {/* Shows backend error if add-to-cart fails */}
+      {error ? <div className="text-sm text-red-500">{error}</div> : null}
+
+      {/* Shows success feedback after item is added */}
+      {success ? <div className="text-sm text-green-600">{success}</div> : null}
+
       {/* Add selected item(s) to cart and show total price */}
-      <Button type="button" className="w-full" onClick={addToCart}>
-        Add to cart · £{total.toFixed(2)}
+      <Button
+        type="button"
+        className="w-full"
+        disabled={isLoading}
+        onClick={addToCart}
+      >
+        {isLoading ? 'Adding...' : `Add to cart · £${total.toFixed(2)}`}
       </Button>
     </div>
   );

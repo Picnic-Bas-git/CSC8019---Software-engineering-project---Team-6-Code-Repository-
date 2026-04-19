@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// React hook for reading account data on the client
+// React hook for reading account and cart data on the client
 import { useEffect, useState } from 'react';
 
 // Theme toggle button component
@@ -15,9 +15,6 @@ import { Button } from '@/components/ui/button';
 
 // Icons used in the layout and bottom navigation
 import { User, Coffee, ClipboardList, Gift, ShoppingCart } from 'lucide-react';
-
-// Zustand cart store hook for deriving total cart quantity
-import { useCartStore } from '@/lib/cart-store';
 
 /**
  * Reusable bottom navigation tab.
@@ -71,31 +68,47 @@ export default function AppShell({
   // Holds the current logged-in user returned by the backend
   const [user, setUser] = useState(null);
 
-  // Load the current user once on mount from the real auth endpoint
+  // Holds the total cart quantity returned from the backend cart
+  const [cartCount, setCartCount] = useState(0);
+
+  // Load the current user and cart once on mount from the real backend
   useEffect(() => {
-    async function loadUser() {
+    async function loadAppShellData() {
       try {
-        const res = await fetch('/api/auth/me');
-        const data = await res.json();
+        // Load the current logged-in user
+        const userRes = await fetch('/api/auth/me');
+        const userData = await userRes.json();
 
-        if (!res.ok) {
+        if (userRes.ok) {
+          setUser(userData.user);
+        } else {
           setUser(null);
-          return;
         }
-
-        setUser(data.user);
       } catch {
         setUser(null);
       }
+
+      try {
+        // Load the current user's cart so the badge count stays in sync
+        const cartRes = await fetch('/api/cart');
+        const cartData = await cartRes.json();
+
+        if (cartRes.ok) {
+          const totalCount = (cartData.items || []).reduce(
+            (sum, item) => sum + item.quantity,
+            0,
+          );
+          setCartCount(totalCount);
+        } else {
+          setCartCount(0);
+        }
+      } catch {
+        setCartCount(0);
+      }
     }
 
-    loadUser();
-  }, []);
-
-  // Total number of items in the cart, summed across all line items
-  const cartCount = useCartStore((s) =>
-    s.items.reduce((sum, i) => sum + i.qty, 0),
-  );
+    loadAppShellData();
+  }, [pathname]);
 
   /**
    * Returns true when the current route matches the given href

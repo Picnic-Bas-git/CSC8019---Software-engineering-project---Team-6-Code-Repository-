@@ -1,12 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-import { useCartStore } from '@/lib/cart-store';
-import { useOrdersStore } from '@/lib/orders-store';
-import { getSession } from '@/lib/session';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,45 +17,139 @@ function money(n) {
 export default function CheckoutPage() {
   const router = useRouter();
 
-  const items = useCartStore((s) => s.items);
-  const clearCart = useCartStore((s) => s.clear);
-  const addOrder = useOrdersStore((s) => s.addOrder);
+  // Holds the current backend cart items
+  const [items, setItems] = useState([]);
 
+  // Holds the logged-in user from the backend
+  const [user, setUser] = useState(null);
+
+  // Pickup name entered by the customer
   const [pickupName, setPickupName] = useState('');
+
+  // Optional checkout notes
   const [notes, setNotes] = useState('');
+
+  // Tracks whether the page is still loading cart/user data
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Tracks whether the order is being submitted
   const [submitting, setSubmitting] = useState(false);
 
-  // Prefill pickup name from the current session, if available.
-  // Read after mount to avoid SSR/localStorage mismatch.
+  // Stores any loading or submit error
+  const [error, setError] = useState('');
+
+  /**
+   * Loads the current user and current cart from the backend.
+   * This replaces the old local session and local cart logic.
+   */
   useEffect(() => {
-    const session = getSession();
-    const prefill = session?.name || session?.email?.split('@')[0] || '';
-    if (prefill) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPickupName(prefill);
+    async function loadCheckoutData() {
+      try {
+        setError('');
+
+        const [userRes, cartRes] = await Promise.all([
+          fetch('/api/auth/me', { cache: 'no-store' }),
+          fetch('/api/cart', { cache: 'no-store' }),
+        ]);
+
+        const userData = await userRes.json();
+        const cartData = await cartRes.json();
+
+        if (userRes.ok) {
+          setUser(userData.user);
+
+          // Prefill pickup name from the current user if available
+          const prefill =
+            userData.user?.name || userData.user?.email?.split('@')[0] || '';
+
+          if (prefill) {
+            setPickupName(prefill);
+          }
+        } else {
+          setUser(null);
+        }
+
+        if (!cartRes.ok) {
+          setError(cartData.error || 'Failed to load cart');
+          setItems([]);
+          return;
+        }
+
+        setItems(cartData.items || []);
+      } catch {
+        setError('Something went wrong while loading checkout.');
+        setItems([]);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
     }
+
+    loadCheckoutData();
   }, []);
 
-  const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
+  // Calculate the subtotal from backend cart line totals
+  const subtotal = useMemo(
+    () => items.reduce((sum, i) => sum + i.lineTotal, 0),
+    [items],
+  );
 
-  const handlePlaceOrder = () => {
-    if (!items.length || submitting) return;
-    setSubmitting(true);
+  /**
+   * Places the order through the backend order endpoint.
+   * The backend will create the order from the user's cart.
+   */
+  async function handlePlaceOrder() {
+    if (!items.length || submitting || !pickupName.trim()) return;
 
-    const session = getSession();
-    const order = addOrder({
-      items,
-      subtotal,
-      customerEmail: session?.email ?? null,
-      pickupName: pickupName.trim(),
-      notes: notes.trim(),
-    });
+    try {
+      setSubmitting(true);
+      setError('');
 
-    clearCart();
-    router.push(`/customer/status?placed=${order.id}`);
-  };
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pickupName: pickupName.trim(),
+          notes: notes.trim(),
+        }),
+      });
 
-  // Empty cart state — nothing to check out
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to place order');
+        return;
+      }
+
+      // Redirect to status page for the newly placed order
+      router.push(`/customer/status?placed=${data.order.id}`);
+      router.refresh();
+    } catch {
+      setError('Something went wrong while placing your order.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // Loading state while waiting for checkout data
+  if (isLoading) {
+    return (
+      <div className="mx-auto w-full max-w-2xl">
+        <Card className="border-border/60 bg-card/70 coffee-card">
+          <CardHeader>
+            <CardTitle>Checkout</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="text-muted-foreground">Loading checkout...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Empty cart state, nothing to check out
   if (items.length === 0) {
     return (
       <div className="mx-auto w-full max-w-2xl">
@@ -68,6 +158,8 @@ export default function CheckoutPage() {
             <CardTitle>Checkout</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            {error ? <div className="text-sm text-red-500">{error}</div> : null}
+
             <div className="text-muted-foreground">
               Your cart is empty.{' '}
               <Link href="/customer/menu" className="underline">
@@ -90,16 +182,16 @@ export default function CheckoutPage() {
         <CardContent className="space-y-3">
           {items.map((i) => (
             <div
-              key={`${i.menuItemId}-${i.size}`}
+              key={i.id}
               className="border-border/60 bg-background/40 flex items-center justify-between gap-3 rounded-xl border p-3"
             >
               <div className="min-w-0">
                 <div className="font-medium">{i.name}</div>
                 <div className="text-muted-foreground text-xs">
-                  Size: {i.size} · {money(i.unitPrice)} each · Qty {i.qty}
+                  Size: {i.size} · {money(i.unitPrice)} each · Qty {i.quantity}
                 </div>
               </div>
-              <div className="font-semibold">{money(i.unitPrice * i.qty)}</div>
+              <div className="font-semibold">{money(i.lineTotal)}</div>
             </div>
           ))}
 
@@ -116,6 +208,9 @@ export default function CheckoutPage() {
           <CardTitle>Pickup details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Show any checkout error */}
+          {error ? <div className="text-sm text-red-500">{error}</div> : null}
+
           <div className="space-y-2">
             <Label htmlFor="pickup-name">Name for pickup</Label>
             <Input
@@ -143,12 +238,13 @@ export default function CheckoutPage() {
                 Back to cart
               </Button>
             </Link>
+
             <Button
               className="sm:order-2"
               onClick={handlePlaceOrder}
               disabled={submitting || !pickupName.trim()}
             >
-              {submitting ? 'Placing…' : `Place order · ${money(subtotal)}`}
+              {submitting ? 'Placing...' : `Place order · ${money(subtotal)}`}
             </Button>
           </div>
         </CardContent>

@@ -1,10 +1,10 @@
 'use client';
 
+// React hooks for loading and updating cart data from the backend
+import { useEffect, useMemo, useState } from 'react';
+
 // Next.js link component for client-side navigation
 import Link from 'next/link';
-
-// Zustand cart store hooks for reading and updating cart state
-import { useCartStore } from '@/lib/cart-store';
 
 // Reusable UI components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,16 +19,151 @@ function money(n) {
 }
 
 export default function CartPage() {
-  // Get cart items from the global cart store
-  const items = useCartStore((s) => s.items);
+  // Holds the cart items returned by the backend
+  const [items, setItems] = useState([]);
 
-  // Cart actions from the store
-  const setQty = useCartStore((s) => s.setQty);
-  const removeItem = useCartStore((s) => s.removeItem);
-  const clear = useCartStore((s) => s.clear);
+  // Tracks whether the cart is still loading
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Calculate the subtotal by summing item price × quantity
-  const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
+  // Stores any cart loading or action error
+  const [error, setError] = useState('');
+
+  // Tracks whether a cart action is currently running
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  /**
+   * Loads the current signed-in user's cart from the backend.
+   */
+  async function loadCart() {
+    try {
+      setError('');
+
+      const res = await fetch('/api/cart', {
+        cache: 'no-store',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to load cart');
+        setItems([]);
+        return;
+      }
+
+      setItems(data.items || []);
+    } catch {
+      setError('Something went wrong while loading the cart.');
+      setItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Load the cart once when the page first renders
+  useEffect(() => {
+    loadCart();
+  }, []);
+
+  /**
+   * Updates the quantity of a cart item.
+   * If the new quantity is 0 or less, the item is removed instead.
+   */
+  async function handleSetQty(item, newQty) {
+    if (newQty <= 0) {
+      await handleRemove(item.id);
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      setError('');
+
+      const res = await fetch(`/api/cart/${item.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          quantity: newQty,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update cart item');
+        return;
+      }
+
+      await loadCart();
+    } catch {
+      setError('Something went wrong while updating the cart.');
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  /**
+   * Removes one cart item completely from the backend cart.
+   */
+  async function handleRemove(cartItemId) {
+    try {
+      setIsUpdating(true);
+      setError('');
+
+      const res = await fetch(`/api/cart/${cartItemId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to remove cart item');
+        return;
+      }
+
+      await loadCart();
+    } catch {
+      setError('Something went wrong while removing the item.');
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  /**
+   * Clears the cart by deleting all current items one by one.
+   * This is simple and works fine for now.
+   */
+  async function handleClear() {
+    try {
+      setIsUpdating(true);
+      setError('');
+
+      for (const item of items) {
+        const res = await fetch(`/api/cart/${item.id}`, {
+          method: 'DELETE',
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error || 'Failed to clear cart');
+          return;
+        }
+      }
+
+      await loadCart();
+    } catch {
+      setError('Something went wrong while clearing the cart.');
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  // Calculate the subtotal by summing line totals from backend items
+  const subtotal = useMemo(
+    () => items.reduce((sum, i) => sum + i.lineTotal, 0),
+    [items],
+  );
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4">
@@ -40,27 +175,44 @@ export default function CartPage() {
 
           {/* Only show the clear button when the cart has items */}
           {items.length ? (
-            <Button variant="outline" onClick={clear}>
+            <Button
+              variant="outline"
+              onClick={handleClear}
+              disabled={isUpdating}
+            >
               Clear
             </Button>
           ) : null}
         </CardHeader>
 
         <CardContent className="space-y-3">
+          {/* Loading state while cart data is being fetched */}
+          {isLoading ? (
+            <div className="text-muted-foreground text-sm">Loading cart...</div>
+          ) : null}
+
+          {/* Error state if loading or updating the cart fails */}
+          {!isLoading && error ? (
+            <div className="text-sm text-red-500">{error}</div>
+          ) : null}
+
           {/* Empty cart state */}
-          {items.length === 0 ? (
+          {!isLoading && items.length === 0 ? (
             <div className="text-muted-foreground text-sm">
               Your cart is empty.{' '}
               <Link href="/customer/menu" className="underline">
                 Browse the menu
               </Link>
             </div>
-          ) : (
+          ) : null}
+
+          {/* Populated cart state */}
+          {!isLoading && items.length > 0 ? (
             <div className="space-y-3">
               {/* Render each cart item */}
               {items.map((i) => (
                 <div
-                  key={`${i.menuItemId}-${i.size}`}
+                  key={i.id}
                   className="border-border/60 bg-background/40 flex items-center justify-between gap-3 rounded-xl border p-3"
                 >
                   {/* Item details */}
@@ -77,19 +229,23 @@ export default function CartPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setQty(i.menuItemId, i.size, i.qty - 1)}
+                      disabled={isUpdating}
+                      onClick={() => handleSetQty(i, i.quantity - 1)}
                     >
                       -
                     </Button>
 
                     {/* Current quantity */}
-                    <div className="w-8 text-center font-medium">{i.qty}</div>
+                    <div className="w-8 text-center font-medium">
+                      {i.quantity}
+                    </div>
 
                     {/* Increase quantity by 1 */}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setQty(i.menuItemId, i.size, i.qty + 1)}
+                      disabled={isUpdating}
+                      onClick={() => handleSetQty(i, i.quantity + 1)}
                     >
                       +
                     </Button>
@@ -98,7 +254,8 @@ export default function CartPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => removeItem(i.menuItemId, i.size)}
+                      disabled={isUpdating}
+                      onClick={() => handleRemove(i.id)}
                     >
                       Remove
                     </Button>
@@ -114,10 +271,12 @@ export default function CartPage() {
 
               {/* Proceed to checkout */}
               <Link href="/customer/order" className="block">
-                <Button className="w-full">Continue to checkout</Button>
+                <Button className="w-full" disabled={isUpdating}>
+                  Continue to checkout
+                </Button>
               </Link>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>
