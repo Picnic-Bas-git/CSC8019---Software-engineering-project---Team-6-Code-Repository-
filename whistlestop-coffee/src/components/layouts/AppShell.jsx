@@ -127,6 +127,8 @@ export default function AppShell({
         ? '/customer/account'
         : '/auth/login';
 
+  const homeHref = user ? '/customer/menu' : '/auth/login';
+
   return (
     <main className="coffee-bg min-h-screen">
       {/* Main page container */}
@@ -147,7 +149,7 @@ export default function AppShell({
               </div>
 
               <h1 className="text-2xl font-semibold tracking-tight">
-                <Link href="/" className="hover:opacity-90">
+                <Link href={homeHref} className="hover:opacity-90">
                   {title || 'Whistlestop Coffee Hut'}
                 </Link>
               </h1>
