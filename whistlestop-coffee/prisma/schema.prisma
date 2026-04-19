@@ -251,6 +251,7 @@ enum Category {
   PASTRY
   SNACK
   COLD_DRINK
+  CHOCOLATE
 }
 
 enum OrderStatus {

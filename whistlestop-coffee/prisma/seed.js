@@ -36,7 +36,73 @@ const adapter = new PrismaMariaDb({
 // Create a Prisma client using the MariaDB adapter
 const prisma = new PrismaClient({ adapter });
 
-async function main() {
+const MENU_ITEMS = [
+  {
+    slug: 'americano',
+    name: 'Americano',
+    description: 'Freshly brewed espresso topped with hot water.',
+    category: 'COFFEE',
+    priceRegular: 1.5,
+    priceLarge: 2.0,
+    isAvailable: true,
+  },
+  {
+    slug: 'americano-with-milk',
+    name: 'Americano with milk',
+    description: 'Classic americano finished with a splash of milk.',
+    category: 'COFFEE',
+    priceRegular: 2.0,
+    priceLarge: 2.5,
+    isAvailable: true,
+  },
+  {
+    slug: 'latte',
+    name: 'Latte',
+    description: 'Smooth espresso with steamed milk.',
+    category: 'COFFEE',
+    priceRegular: 2.5,
+    priceLarge: 3.0,
+    isAvailable: true,
+  },
+  {
+    slug: 'cappuccino',
+    name: 'Cappuccino',
+    description: 'Espresso with steamed milk and a thick foam top.',
+    category: 'COFFEE',
+    priceRegular: 2.5,
+    priceLarge: 3.0,
+    isAvailable: true,
+  },
+  {
+    slug: 'hot-chocolate',
+    name: 'Hot Chocolate',
+    description: 'Rich hot chocolate served warm.',
+    category: 'CHOCOLATE',
+    priceRegular: 2.0,
+    priceLarge: 2.5,
+    isAvailable: true,
+  },
+  {
+    slug: 'mocha',
+    name: 'Mocha',
+    description: 'Chocolate-flavoured coffee with steamed milk.',
+    category: 'COFFEE',
+    priceRegular: 2.5,
+    priceLarge: 3.0,
+    isAvailable: true,
+  },
+  {
+    slug: 'mineral-water',
+    name: 'Mineral Water',
+    description: 'Still bottled mineral water.',
+    category: 'COLD_DRINK',
+    priceRegular: 1.0,
+    priceLarge: null,
+    isAvailable: true,
+  },
+];
+
+async function seedUsers() {
   // Hash default passwords before storing them in the database
   const adminPasswordHash = await bcrypt.hash('Admin123!', 10);
   const staffPasswordHash = await bcrypt.hash('Staff123!', 10);
@@ -66,8 +132,30 @@ async function main() {
       role: 'STAFF',
     },
   });
+}
 
-  console.log('Seeded admin and staff users successfully.');
+async function seedMenuItems() {
+  for (const item of MENU_ITEMS) {
+    await prisma.menuItem.upsert({
+      where: { slug: item.slug },
+      update: {
+        name: item.name,
+        description: item.description,
+        category: item.category,
+        priceRegular: item.priceRegular,
+        priceLarge: item.priceLarge,
+        isAvailable: item.isAvailable,
+      },
+      create: item,
+    });
+  }
+}
+
+async function main() {
+  await seedUsers();
+  await seedMenuItems();
+
+  console.log('Seeded admin, staff, and menu items successfully.');
 }
 
 main()

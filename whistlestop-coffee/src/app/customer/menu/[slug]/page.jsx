@@ -1,22 +1,53 @@
 import Link from 'next/link';
-import { getMenuItems } from '@/lib/menu';
-import { Button } from '@/components/ui/button';
+import { prisma } from '@/lib/prisma';
 import { Card, CardContent } from '@/components/ui/card';
 import AddToCartPanel from '../AddToCartPanel';
 
 /**
  * Displays a single menu item's detail page.
- * Reads the item id from the route params,
- * finds the matching menu item,
+ * Reads the item slug from the route params,
+ * loads the matching menu item directly from the database,
  * and shows its size and quantity selection UI.
  */
 export default async function MenuItemPage({ params }) {
   // Get the dynamic route parameter, for example: /customer/menu/latte
-  const { id } = await params;
+  const { slug } = await params;
 
-  // Load all menu items and find the one matching the route id
-  const items = getMenuItems();
-  const item = items.find((x) => x.id === id);
+  let item = null;
+
+  try {
+    // Load the matching menu item from the database
+    const dbItem = await prisma.menuItem.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        priceRegular: true,
+        priceLarge: true,
+        isAvailable: true,
+      },
+    });
+
+    // Map the database item into the shape expected by the current frontend
+    if (dbItem) {
+      item = {
+        id: dbItem.id,
+        slug: dbItem.slug,
+        name: dbItem.name,
+        description: dbItem.description,
+        isAvailable: dbItem.isAvailable,
+        prices: {
+          regular: dbItem.priceRegular,
+          large: dbItem.priceLarge,
+        },
+      };
+    }
+  } catch (error) {
+    // Keep item as null if the database query fails
+    console.error('MENU DETAIL PAGE ERROR:', error);
+  }
 
   // If no matching item is found, show a fallback message
   if (!item) {
@@ -37,8 +68,9 @@ export default async function MenuItemPage({ params }) {
     <div className="mx-auto max-w-md space-y-4">
       {/* Hero section with item name and pricing */}
       <div className="bg-primary/10 coffee-card relative h-40 w-full overflow-hidden rounded-2xl">
-        {/* Decorative background, add image! */}
+        {/* Decorative background, add image later if needed */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+
         {/* Item title and price display */}
         <div className="absolute bottom-4 left-4">
           <div className="text-xl font-semibold">{item.name}</div>
@@ -52,7 +84,7 @@ export default async function MenuItemPage({ params }) {
 
       {/* Card containing selection controls */}
       <Card className="border-border/60 bg-card/70 coffee-card">
-        {/* Instruction text */}
+        {/* Instruction text and add-to-cart controls */}
         <CardContent className="space-y-4 p-4">
           <AddToCartPanel item={item} />
 
