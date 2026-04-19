@@ -122,6 +122,30 @@ export default function AccountPage() {
                 <div className="font-medium">{user.loyaltyStamps ?? 0}</div>
               </div>
 
+              {/* Quick actions for signed-in customers */}
+              <div className="grid gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/customer/status')}
+                >
+                  View order status
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/customer/loyalty')}
+                >
+                  View loyalty
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/customer/menu')}
+                >
+                  Browse menu
+                </Button>
+              </div>
+
               {/* Extra navigation options shown only for staff or admin users */}
               {user.role === 'STAFF' || user.role === 'ADMIN' ? (
                 <div className="grid gap-2">

@@ -193,3 +193,362 @@ same shape.
 - **Build:** `npx next build` — successful. `/customer/order` appears in the
   route manifest as a static route (`○`).
 
+## Backend + Frontend Updates (Chena) 19th April
+
+---
+
+# 5. Backend integration and persistent API flow
+
+This section documents the later changes made to move the application away from
+prototype-only local state and toward a real backend-backed ordering flow.
+
+Unlike the earlier frontend-only version, these changes use:
+
+- a shared MySQL database
+- Prisma ORM
+- authenticated API routes
+- database-backed cart, orders, archive, and loyalty data
+
+This work allows customer and staff features to persist beyond local browser
+storage and makes the system behave more like a real kiosk ordering platform.
+
+---
+
+## 5.1 Database and Prisma setup
+
+**Files involved:**
+- `prisma/schema.prisma`
+- `prisma.config.ts`
+- `src/lib/prisma.js`
+- `prisma/seed.js`
+
+### Database setup
+
+A shared MySQL database was configured using Aiven. Prisma was then connected
+to this database so that application data could be read from and written to a
+persistent backend rather than remaining in browser-only local state.
+
+### Prisma schema
+
+The Prisma schema was expanded to support the full application model, including:
+
+- `User`
+- `MenuItem`
+- `CartItem`
+- `Order`
+- `OrderItem`
+- `LoyaltyRecord`
+- `Station`
+- `OpeningHour`
+- `PaymentRecord`
+- `TrainSchedule`
+- `TrainSelection`
+- `Notification`
+- `AuditLog`
+
+This schema supports both customer-facing ordering flows and staff-side order
+management.
+
+### Runtime connection
+
+Because Prisma v7 was used, the runtime client required the MariaDB adapter
+configuration instead of the older direct datasource URL approach. SSL/TLS was
+configured using the Aiven CA certificate so that the backend could connect
+securely to the hosted database.
+
+### Seed data
+
+A seed script was created to preload:
+
+- admin and staff users
+- starter menu items
+
+The menu data originally hard-coded in the frontend was converted into seeded
+database records so that menu pages could be powered by the real backend.
+
+---
+
+## 5.2 Authentication and role-based access
+
+**Files involved:**
+- `src/lib/auth.js`
+- `src/lib/session.js`
+- `src/lib/validations/auth.js`
+- `src/app/api/auth/register/route.js`
+- `src/app/api/auth/login/route.js`
+- `src/app/api/auth/logout/route.js`
+- `src/app/api/auth/me/route.js`
+
+### Customer registration and login
+
+Customer registration and login were moved from temporary frontend session
+logic to real backend routes. Registration now validates input, hashes the
+password securely, stores the user in the database, and returns a proper
+backend response.
+
+Login checks the submitted credentials against the database and, when valid,
+creates a signed authentication token stored in an HTTP-only cookie.
+
+### Staff and admin accounts
+
+Staff and admin accounts were seeded into the database rather than being
+created through the public customer registration flow. This more closely
+matches a real-world internal operational system where staff roles are
+controlled rather than publicly self-assigned.
+
+### Session handling
+
+Authenticated user state is now resolved by the backend through `/api/auth/me`
+instead of temporary local browser session storage. This ensures that role and
+identity come from the database and signed cookie, not inferred frontend logic.
+
+---
+
+## 5.3 Menu API and menu page integration
+
+**Files involved:**
+- `src/app/api/menu/route.js`
+- `src/app/api/menu/[slug]/route.js`
+- `src/app/customer/menu/page.jsx`
+- `src/app/customer/menu/[slug]/page.jsx`
+
+### Menu API
+
+A database-backed menu API was added so customers can retrieve menu items from
+persistent backend data rather than from a hard-coded array in `lib/menu.js`.
+
+The API supports:
+- loading all available menu items
+- loading a single menu item by slug
+- future category/search extension
+
+### Frontend migration
+
+The customer menu page was updated to fetch menu items from `/api/menu`.
+The individual menu item page was also updated so that item details are loaded
+using the real database-backed item slug.
+
+This replaced the earlier prototype menu flow while preserving the existing UI
+structure and card layout.
+
+---
+
+## 5.4 Cart API and cart persistence
+
+**Files involved:**
+- `src/lib/validations/cart.js`
+- `src/app/api/cart/route.js`
+- `src/app/api/cart/[id]/route.js`
+- `src/app/customer/cart/page.jsx`
+- `src/app/customer/menu/page.jsx`
+- `src/app/customer/menu/AddToCartPanel.jsx`
+- `src/components/layouts/app-shell.jsx`
+
+### Cart backend
+
+A full cart API was created to support:
+
+- loading the current user's cart
+- adding items to the cart
+- updating quantity or size
+- removing items from the cart
+
+This changed the cart from a purely local Zustand implementation to a real
+database-backed feature.
+
+### Cart page migration
+
+The customer cart page was rewritten to load data from `/api/cart` and to use
+backend PATCH/DELETE operations for quantity changes and item removal.
+
+This means the cart now survives page refreshes and device/browser changes
+because it is stored in the backend rather than only in local browser state.
+
+### Add-to-cart integration
+
+The menu quick-add button and the detailed add-to-cart panel were updated to
+use `POST /api/cart` instead of writing directly into a local cart store.
+
+The quick-add flow defaults to the regular size when a drink has multiple
+sizes, while the detailed item page allows explicit size and quantity
+selection.
+
+### Header cart badge
+
+The application shell was updated to derive its cart count from the backend
+cart API rather than from local-only state. This keeps the cart badge aligned
+with the real persisted cart.
+
+---
+
+## 5.5 Orders API and checkout integration
+
+**Files involved:**
+- `src/lib/validations/order.js`
+- `src/app/api/orders/route.js`
+- `src/app/api/orders/[id]/route.js`
+- `src/app/customer/order/page.jsx`
+- `src/app/customer/status/page.jsx`
+
+### Order creation
+
+A real orders API was added so checkout no longer depends on a local
+`orders-store`. The backend now:
+
+1. reads the user's current cart from the database
+2. validates item availability and pricing
+3. calculates totals on the backend
+4. creates an `Order` plus `OrderItem` records
+5. clears the cart after successful creation
+6. records loyalty gains
+
+### Order history and order detail
+
+Authenticated users can now retrieve their order history and specific order
+details through backend routes.
+
+### Checkout page migration
+
+The checkout page was updated to:
+- read the cart from the backend
+- prefill customer information from `/api/auth/me`
+- place the order through `POST /api/orders`
+
+This replaced the earlier prototype-only order placement flow.
+
+### Status page migration
+
+The customer status page was expanded to support:
+- `?placed=...` after checkout
+- `?orderId=...` when revisiting a specific order
+- recent orders when no query parameter is present
+
+This allows the customer to track active or recent orders using real backend
+data.
+
+---
+
+## 5.6 Staff order management
+
+**Files involved:**
+- `src/lib/validations/staff-order.js`
+- `src/app/api/staff/orders/route.js`
+- `src/app/api/staff/orders/[id]/route.js`
+- `src/app/staff/dashboard/page.jsx`
+
+### Staff dashboard backend
+
+Staff and admin users can now fetch active non-archived orders from the
+backend. This powers the staff dashboard with real customer orders rather than
+prototype-only mock state.
+
+### Status updates
+
+Staff can advance an order through its lifecycle by calling backend PATCH
+routes. The dashboard supports moving an order through the relevant statuses
+and updating the customer-visible status accordingly.
+
+### Dashboard details
+
+The staff dashboard was expanded to show more than just summary counts. It
+also shows:
+- customer details
+- item breakdown
+- order total
+- actionable status buttons
+
+This makes the page usable as an operational order management view.
+
+---
+
+## 5.7 Archive API
+
+**Files involved:**
+- `src/app/api/staff/archive/route.js`
+- `src/app/staff/archive/page.jsx`
+
+An archive API was added so staff can review completed/archived orders after
+they leave the active dashboard.
+
+Collected orders are archived automatically by backend logic, which prevents
+the active dashboard from becoming cluttered and gives staff a dedicated place
+to review completed work.
+
+The archive page shows:
+- order id
+- final status
+- customer details
+- order items
+- totals
+- archive timestamps
+
+---
+
+## 5.8 Loyalty API
+
+**Files involved:**
+- `src/app/api/loyalty/route.js`
+- `src/app/customer/loyalty/page.jsx`
+
+A loyalty API was created so customers can view both:
+- their current loyalty totals
+- their loyalty record history
+
+Loyalty totals are updated when an order is successfully placed. A
+`LoyaltyRecord` entry is also written so the customer can see how their points
+and stamps changed over time.
+
+This replaces the earlier account-only summary with a proper backend-driven
+loyalty view.
+
+---
+
+## 5.9 Route protection
+
+**Files involved:**
+- `src/proxy.js` (previously planned as middleware)
+
+Route protection was added so that:
+
+- private customer routes require authentication
+- staff routes require `STAFF` or `ADMIN` role
+- unauthorized users are redirected appropriately
+
+This ensures that operational pages such as the staff dashboard and archive
+cannot be opened by normal customers, while customer-specific pages like cart,
+checkout, loyalty, and account remain protected behind login.
+
+---
+
+## 5.10 Summary of the newer end-to-end flow
+
+The application now supports a backend-driven customer and staff workflow:
+
+      /auth/register or /auth/login
+          │
+          ▼
+      /customer/menu
+          │  (menu loaded from backend)
+          │  (cart writes through /api/cart)
+          ▼
+      /customer/cart
+          │  (cart loaded from backend)
+          ▼
+      /customer/order
+          │  (checkout places order through /api/orders)
+          ▼
+      /customer/status
+          │  (status loaded from /api/orders/[id])
+          ▼
+      staff login
+          │
+          ▼
+      /staff/dashboard
+          │  (active orders from backend)
+          │  (status updates through /api/staff/orders/[id])
+          ▼
+      /staff/archive
+          │  (archived orders from backend)
+          ▼
+      /customer/loyalty
+          (loyalty loaded from backend)
