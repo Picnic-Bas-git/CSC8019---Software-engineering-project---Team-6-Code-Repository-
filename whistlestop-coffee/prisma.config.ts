@@ -4,8 +4,9 @@
 // Loads environment variables from .env file
 import 'dotenv/config';
 
+// Ref: https://www.prisma.io/docs/prisma-orm/quickstart/mysql
 // Imports Prisma's config helper
-import { defineConfig } from 'prisma/config';
+import { defineConfig, env } from 'prisma/config';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -14,6 +15,6 @@ export default defineConfig({
   },
   datasource: {
     // Reads the database connection string from the DATABASE_URL env variable
-    url: process.env.DATABASE_URL,
+    url: env('DATABASE_URL'),
   },
 });

@@ -4,6 +4,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+// React hook for handling loading and error UI state
+import { useState } from 'react';
+
 // Reusable UI components
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
