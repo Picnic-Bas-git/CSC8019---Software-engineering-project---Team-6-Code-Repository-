@@ -29,7 +29,7 @@ function getUserFromRequest(req) {
   }
 }
 
-export function middleware(req) {
+export function proxy(req) {
   const { pathname } = req.nextUrl;
 
   // Read the current user from the auth cookie
