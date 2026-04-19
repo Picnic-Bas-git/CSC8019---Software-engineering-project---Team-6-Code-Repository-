@@ -10,12 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// Session helper used to store the logged-in user locally, used in dev mode to start
-import { setSession } from '@/lib/session';
-
 export default function LoginPage() {
   // Router lets us redirect the user after login
   const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   /**
    * Handles form submission.
@@ -23,23 +23,47 @@ export default function LoginPage() {
    * determines whether the user is staff or customer,
    * stores the session, then redirects to the correct page.
    */
-  function onContinue(e) {
+  async function onContinue(e) {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    const formData = new FormData(e.currentTarget);
 
     // Get the entered email from the form, fallback to empty string
-    const email = e.currentTarget.email.value || '';
+    const email = formData.get('email')?.toString().trim() || '';
 
-    // Simple role detection:
-    // if email contains "staff", treat user as staff, otherwise customer
-    // Can change to perhaps whistlestop ie app domain
-    const isStaff = email.toLowerCase().includes('staff');
-    const role = isStaff ? 'staff' : 'customer';
+    const password = formData.get('password')?.toString() || '';
 
-    // Save the user session so the app can remember who is logged in
-    setSession({ email, role });
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Redirect based on role
-    router.push(isStaff ? '/staff/dashboard' : '/customer/menu');
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        return;
+      }
+
+      const role = data?.user?.role;
+
+      if (role === 'STAFF' || role === 'ADMIN') {
+        router.push('/staff/dashboard');
+        return;
+      }
+
+      router.push('/customer/menu');
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -70,12 +94,11 @@ export default function LoginPage() {
                 name="email"
                 placeholder="name@email.com"
                 autoComplete="email"
+                required
               />
             </div>
 
-            {/* Password field
-               Note: password is currently collected but not validated yet.
-               This is only UI till authentication logic is added by backend team. */}
+            {/* Password field */}
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -83,12 +106,16 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 autoComplete="current-password"
+                required
               />
             </div>
 
+            {/*error displayed if there's a mistake*/}
+            {error ? <p className="text-sm text-red-500">{error}</p> : null}
+
             {/* Submit button */}
-            <Button type="submit" className="w-full">
-              Continue
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Logging in...' : 'Continue'}
             </Button>
           </form>
 

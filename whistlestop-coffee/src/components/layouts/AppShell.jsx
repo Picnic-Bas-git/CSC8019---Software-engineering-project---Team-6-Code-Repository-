@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// React hook for reading session data on the client
+// React hook for reading account data on the client
 import { useEffect, useState } from 'react';
 
 // Theme toggle button component
@@ -18,9 +18,6 @@ import { User, Coffee, ClipboardList, Gift, ShoppingCart } from 'lucide-react';
 
 // Zustand cart store hook for deriving total cart quantity
 import { useCartStore } from '@/lib/cart-store';
-
-// Session utility for reading the current logged-in user
-import { getSession } from '@/lib/session';
 
 /**
  * Reusable bottom navigation tab.
@@ -71,12 +68,28 @@ export default function AppShell({
   // Current pathname, used to detect which nav item is active
   const pathname = usePathname();
 
-  // Holds the current session so account navigation can adapt by role
-  const [session, setSession] = useState(null);
+  // Holds the current logged-in user returned by the backend
+  const [user, setUser] = useState(null);
 
-  // Read the saved session once on mount
+  // Load the current user once on mount from the real auth endpoint
   useEffect(() => {
-    setSession(getSession());
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+
+        if (!res.ok) {
+          setUser(null);
+          return;
+        }
+
+        setUser(data.user);
+      } catch {
+        setUser(null);
+      }
+    }
+
+    loadUser();
   }, []);
 
   // Total number of items in the cart, summed across all line items
@@ -95,9 +108,9 @@ export default function AppShell({
 
   // Determine where the account button should go
   const accountHref =
-    session?.role === 'staff'
+    user?.role === 'STAFF' || user?.role === 'ADMIN'
       ? '/staff/dashboard'
-      : session?.role === 'customer'
+      : user?.role === 'CUSTOMER'
         ? '/customer/account'
         : '/auth/login';
 
@@ -155,7 +168,7 @@ export default function AppShell({
                 </Link>
               ) : null}
 
-              {/* Account shortcut routes based on session role */}
+              {/* Account shortcut routes based on logged-in user role */}
               <Link href={accountHref}>
                 <Button
                   variant="outline"

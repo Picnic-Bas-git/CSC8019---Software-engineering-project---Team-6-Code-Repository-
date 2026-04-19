@@ -28,7 +28,7 @@ export async function POST(req) {
     }
 
     // Extract the validated user data
-    const { name, email, password } = parsed.data;
+    const { name, email, phone, password } = parsed.data;
 
     // Check whether a user with this email already exists
     const existingUser = await prisma.user.findUnique({
@@ -51,6 +51,7 @@ export async function POST(req) {
       data: {
         name,
         email,
+        phone,
         passwordHash,
       },
       // Return only safe user fields in the response
@@ -58,6 +59,7 @@ export async function POST(req) {
         id: true,
         name: true,
         email: true,
+        phone: true,
         role: true,
       },
     });

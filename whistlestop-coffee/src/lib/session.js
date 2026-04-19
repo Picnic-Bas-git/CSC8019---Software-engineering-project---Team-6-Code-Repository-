@@ -36,6 +36,7 @@ export async function getCurrentUser() {
         id: true,
         name: true,
         email: true,
+        phone: true,
         role: true,
         loyaltyPoints: true,
         loyaltyStamps: true,
