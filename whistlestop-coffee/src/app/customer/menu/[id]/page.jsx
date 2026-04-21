@@ -36,9 +36,13 @@ export default async function MenuItemPage({ params }) {
   return (
     <div className="mx-auto max-w-md space-y-4">
       {/* Hero section with item name and pricing */}
-      <div className="bg-primary/10 coffee-card relative h-40 w-full overflow-hidden rounded-2xl">
-        {/* Decorative background, add image! */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+      <div className="bg-primary/10 coffee-card relative flex h-48 w-full items-center justify-center overflow-hidden rounded-2xl">
+        {/* Product image */}
+        <img
+          src={item.image}
+          alt={item.name}
+          className="h-36 w-36 object-contain drop-shadow-lg"
+        />
         {/* Item title and price display */}
         <div className="absolute bottom-4 left-4">
           <div className="text-xl font-semibold">{item.name}</div>
