@@ -24,6 +24,7 @@ export default async function MenuItemPage({ params }) {
         slug: true,
         name: true,
         description: true,
+        imageUrl: true,
         priceRegular: true,
         priceLarge: true,
         isAvailable: true,
@@ -38,6 +39,7 @@ export default async function MenuItemPage({ params }) {
         name: dbItem.name,
         description: dbItem.description,
         isAvailable: dbItem.isAvailable,
+        imageUrl: dbItem.imageUrl,
         prices: {
           regular: dbItem.priceRegular,
           large: dbItem.priceLarge,
@@ -68,13 +70,21 @@ export default async function MenuItemPage({ params }) {
     <div className="mx-auto max-w-md space-y-4">
       {/* Hero section with item name and pricing */}
       <div className="bg-primary/10 coffee-card relative h-40 w-full overflow-hidden rounded-2xl">
-        {/* Decorative background, add image later if needed */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+        )}
 
-        {/* Item title and price display */}
-        <div className="absolute bottom-4 left-4">
-          <div className="text-xl font-semibold">{item.name}</div>
-          <div className="text-muted-foreground text-sm">
+        <div className="absolute inset-0 bg-black/20" />
+
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className="text-xl font-semibold text-white">{item.name}</div>
+          <div className="text-sm text-white/90">
             {hasLarge
               ? `Regular £${item.prices.regular.toFixed(2)} · Large £${item.prices.large.toFixed(2)}`
               : `£${item.prices.regular.toFixed(2)}`}
