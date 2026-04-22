@@ -50,7 +50,7 @@ export default function CartPage() {
         return;
       }
 
-      setItems(data.items || []);
+      setItems([...data.items]);
     } catch {
       setError('Something went wrong while loading the cart.');
       setItems([]);
@@ -68,11 +68,27 @@ export default function CartPage() {
    * Updates the quantity of a cart item.
    * If the new quantity is 0 or less, the item is removed instead.
    */
+
   async function handleSetQty(item, newQty) {
     if (newQty <= 0) {
       await handleRemove(item.id);
       return;
     }
+
+    const previousItems = items;
+
+    // Update UI immediately
+    setItems((current) =>
+      current.map((cartItem) =>
+        cartItem.id === item.id
+          ? {
+              ...cartItem,
+              quantity: newQty,
+              lineTotal: cartItem.unitPrice * newQty,
+            }
+          : cartItem,
+      ),
+    );
 
     try {
       setIsUpdating(true);
@@ -91,12 +107,14 @@ export default function CartPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        setItems(previousItems);
         setError(data.error || 'Failed to update cart item');
         return;
       }
 
-      await loadCart();
+      window.dispatchEvent(new Event('cart-updated'));
     } catch {
+      setItems(previousItems);
       setError('Something went wrong while updating the cart.');
     } finally {
       setIsUpdating(false);
@@ -107,6 +125,11 @@ export default function CartPage() {
    * Removes one cart item completely from the backend cart.
    */
   async function handleRemove(cartItemId) {
+    const previousItems = items;
+
+    // Remove item from UI immediately, even though action still happening in backfround
+    setItems((current) => current.filter((item) => item.id !== cartItemId));
+
     try {
       setIsUpdating(true);
       setError('');
@@ -118,12 +141,16 @@ export default function CartPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        // Restore previous cart if delete fails
+        setItems(previousItems);
         setError(data.error || 'Failed to remove cart item');
         return;
       }
 
-      await loadCart();
+      window.dispatchEvent(new Event('cart-updated'));
     } catch {
+      // Restore previous cart if request fails
+      setItems(previousItems);
       setError('Something went wrong while removing the item.');
     } finally {
       setIsUpdating(false);
@@ -132,27 +159,35 @@ export default function CartPage() {
 
   /**
    * Clears the cart by deleting all current items one by one.
-   * This is simple and works fine for now.
    */
   async function handleClear() {
+    const previousItems = items;
+
+    // Clear the UI immediately, since async takes some time
+    setItems([]);
+
     try {
       setIsUpdating(true);
       setError('');
 
-      for (const item of items) {
+      for (const item of previousItems) {
         const res = await fetch(`/api/cart/${item.id}`, {
           method: 'DELETE',
         });
 
         if (!res.ok) {
           const data = await res.json();
+          // Restore previous cart if any delete fails
+          setItems(previousItems);
           setError(data.error || 'Failed to clear cart');
           return;
         }
       }
 
-      await loadCart();
+      window.dispatchEvent(new Event('cart-updated'));
     } catch {
+      // Restore previous cart if request fails
+      setItems(previousItems);
       setError('Something went wrong while clearing the cart.');
     } finally {
       setIsUpdating(false);
@@ -215,15 +250,36 @@ export default function CartPage() {
                   key={i.id}
                   className="border-border/60 bg-background/40 flex items-center justify-between gap-3 rounded-xl border p-3"
                 >
-                  {/* Item details */}
-                  <div className="min-w-0">
-                    <div className="font-medium">{i.name}</div>
-                    <div className="text-muted-foreground text-xs">
-                      Size: {i.size} · {money(i.unitPrice)} each
+                  {/* Left side: product image and item details */}
+                  <div className="flex min-w-0 items-center gap-3">
+                    {/* Small thumbnail area */}
+                    <div className="bg-primary/10 relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+                      {/* Show the real product image if one exists */}
+                      {i.imageUrl ? (
+                        <img
+                          src={i.imageUrl}
+                          alt={i.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        /* Fallback decorative background when no image is available */
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+                      )}
+                    </div>
+
+                    {/* Item text details */}
+                    <div className="min-w-0">
+                      {/* Product name */}
+                      <div className="font-medium">{i.name}</div>
+
+                      {/* Size and single-item price */}
+                      <div className="text-muted-foreground text-xs">
+                        Size: {i.size} · {money(i.unitPrice)} each
+                      </div>
                     </div>
                   </div>
 
-                  {/* Quantity controls and remove action */}
+                  {/* Right side: quantity controls and remove button */}
                   <div className="flex items-center gap-2">
                     {/* Decrease quantity by 1 */}
                     <Button
@@ -250,7 +306,7 @@ export default function CartPage() {
                       +
                     </Button>
 
-                    {/* Remove item completely from the cart */}
+                    {/* Remove the item completely from the cart */}
                     <Button
                       variant="outline"
                       size="sm"
