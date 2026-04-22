@@ -41,6 +41,7 @@ const MENU_ITEMS = [
     slug: 'americano',
     name: 'Americano',
     description: 'Freshly brewed espresso topped with hot water.',
+    imageUrl: '/images/menu/americano.svg',
     category: 'COFFEE',
     priceRegular: 1.5,
     priceLarge: 2.0,
@@ -50,6 +51,7 @@ const MENU_ITEMS = [
     slug: 'americano-with-milk',
     name: 'Americano with milk',
     description: 'Classic americano finished with a splash of milk.',
+    imageUrl: '/images/menu/americano_milk.svg',
     category: 'COFFEE',
     priceRegular: 2.0,
     priceLarge: 2.5,
@@ -59,6 +61,7 @@ const MENU_ITEMS = [
     slug: 'latte',
     name: 'Latte',
     description: 'Smooth espresso with steamed milk.',
+    imageUrl: '/images/menu/latte.svg',
     category: 'COFFEE',
     priceRegular: 2.5,
     priceLarge: 3.0,
@@ -68,6 +71,7 @@ const MENU_ITEMS = [
     slug: 'cappuccino',
     name: 'Cappuccino',
     description: 'Espresso with steamed milk and a thick foam top.',
+    imageUrl: '/images/menu/cappuccino.svg',
     category: 'COFFEE',
     priceRegular: 2.5,
     priceLarge: 3.0,
@@ -77,6 +81,7 @@ const MENU_ITEMS = [
     slug: 'hot-chocolate',
     name: 'Hot Chocolate',
     description: 'Rich hot chocolate served warm.',
+    imageUrl: '/images/menu/hot_chocolate.svg',
     category: 'CHOCOLATE',
     priceRegular: 2.0,
     priceLarge: 2.5,
@@ -86,6 +91,7 @@ const MENU_ITEMS = [
     slug: 'mocha',
     name: 'Mocha',
     description: 'Chocolate-flavoured coffee with steamed milk.',
+    imageUrl: '/images/menu/mocha.svg',
     category: 'COFFEE',
     priceRegular: 2.5,
     priceLarge: 3.0,
@@ -95,6 +101,7 @@ const MENU_ITEMS = [
     slug: 'mineral-water',
     name: 'Mineral Water',
     description: 'Still bottled mineral water.',
+    imageUrl: '/images/menu/water.svg',
     category: 'COLD_DRINK',
     priceRegular: 1.0,
     priceLarge: null,
@@ -133,7 +140,7 @@ async function seedUsers() {
     },
   });
 }
-
+// function to update menu items
 async function seedMenuItems() {
   for (const item of MENU_ITEMS) {
     await prisma.menuItem.upsert({
@@ -142,6 +149,7 @@ async function seedMenuItems() {
         name: item.name,
         description: item.description,
         category: item.category,
+        imageUrl: item.imageUrl,
         priceRegular: item.priceRegular,
         priceLarge: item.priceLarge,
         isAvailable: item.isAvailable,

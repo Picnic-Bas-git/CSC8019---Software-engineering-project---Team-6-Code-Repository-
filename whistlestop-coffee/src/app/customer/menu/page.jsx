@@ -95,6 +95,7 @@ export default function MenuPage() {
           slug: item.slug,
           name: item.name,
           description: item.description,
+          imageUrl: item.imageUrl,
           prices: {
             regular: item.priceRegular,
             large: item.priceLarge,
@@ -184,18 +185,23 @@ export default function MenuPage() {
           >
             {/* Clickable top area linking to the individual menu item page */}
             <Link href={`/customer/menu/${item.slug}`} className="block">
-              <div className="bg-primary/10 relative h-28 w-full">
-                {/* Decorative background, add image later if needed */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+              <div className="bg-primary/10 relative h-28 w-full overflow-hidden">
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+                )}
 
-                {/* Small helper text showing available size options */}
                 <div className="text-muted-foreground absolute bottom-3 left-3 text-xs">
                   {item.prices.large != null
                     ? 'Regular and Large'
                     : 'Single size'}
                 </div>
 
-                {/* Visual size badges */}
                 <SizePills hasLarge={item.prices.large != null} />
               </div>
             </Link>
