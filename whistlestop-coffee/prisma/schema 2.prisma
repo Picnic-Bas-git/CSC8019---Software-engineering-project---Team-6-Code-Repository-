@@ -1,0 +1,295 @@
+/*
+  References:
+  Prisma. (n.d.). Using Prisma with Next.js.
+  https://www.prisma.io/docs/guides/frameworks/nextjs
+
+  Mike, C. (2023). A beginner's guide to using Prisma with Node.js. Medium.
+  https://medium.com/@chinedumike85/a-beginners-guide-to-using-prisma-with-node-js-ef3e040fad73
+*/
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// =======================
+// USER & AUTHENTICATION
+// =======================
+model User {
+  id             String             @id @default(cuid())
+  name           String
+  email          String             @unique
+  phone          String
+  passwordHash   String
+  role           Role               @default(CUSTOMER)
+  loyaltyPoints  Int                @default(0)
+  loyaltyStamps  Int                @default(0)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  cartItems      CartItem[]
+  orders         Order[]
+  loyaltyRecords LoyaltyRecord[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+}
+
+model Station {
+  id             String            @id @default(cuid())
+  name           String
+  slug           String            @unique
+  location       String?
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  openingHours   OpeningHour[]
+  menuItems      StationMenuItem[]
+  orders         Order[]
+  trainSchedules TrainSchedule[]
+}
+
+model OpeningHour {
+  id        String    @id @default(cuid())
+  stationId String
+  dayOfWeek DayOfWeek
+  openTime  String
+  closeTime String
+  isClosed  Boolean   @default(false)
+
+  station   Station   @relation(fields: [stationId], references: [id], onDelete: Cascade)
+
+  @@unique([stationId, dayOfWeek])
+}
+
+// =======================
+// MENU & PRODUCTS
+// =======================
+model MenuItem {
+  id            String            @id @default(cuid())
+  name          String
+  slug          String            @unique
+  description   String
+  category      Category
+  imageUrl      String?
+  priceRegular  Float
+  priceLarge    Float?
+  isAvailable   Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  stations      StationMenuItem[]
+}
+
+// Stores per-station availability and optional stock count for each menu item
+model StationMenuItem {
+  id          String    @id @default(cuid())
+  stationId   String
+  menuItemId  String
+  isAvailable Boolean   @default(true)
+  stockCount  Int?
+  updatedAt   DateTime  @updatedAt
+
+  station     Station   @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([stationId, menuItemId])
+}
+
+model CartItem {
+  id         String    @id @default(cuid())
+  userId     String
+  menuItemId String
+  size       Size
+  quantity   Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, menuItemId, size])
+}
+
+// =======================
+// ORDERS & PAYMENTS
+// =======================
+model Order {
+  id                 String          @id @default(cuid())
+  userId             String
+  stationId          String?
+  totalAmount        Float
+  status             OrderStatus     @default(PENDING)
+  pickupTime         DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  isArchived         Boolean         @default(false)
+  archivedAt         DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  station            Station?        @relation(fields: [stationId], references: [id], onDelete: SetNull)
+  items              OrderItem[]
+  paymentRecord      PaymentRecord?
+  notifications      Notification[]
+  trainSelection     TrainSelection?
+}
+
+// Keeps a historical snapshot of the item name and price at time of purchase
+model OrderItem {
+  id          String    @id @default(cuid())
+  orderId     String
+  menuItemId  String
+  nameAtTime  String
+  priceAtTime Float
+  size        Size
+  quantity    Int
+
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+}
+
+model LoyaltyRecord {
+  id           String            @id @default(cuid())
+  userId       String
+  orderId      String?
+  type         LoyaltyRecordType
+  pointsChange Int               @default(0)
+  stampsChange Int               @default(0)
+  description  String?
+  createdAt    DateTime          @default(now())
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PaymentRecord {
+  id             String        @id @default(cuid())
+  orderId        String        @unique
+  provider       String
+  amount         Float
+  currency       String        @default("GBP")
+  status         PaymentStatus @default(PENDING)
+  transactionRef String?
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model TrainSchedule {
+  id            String    @id @default(cuid())
+  stationId     String
+  lineName      String?
+  destination   String
+  departureTime DateTime
+  platform      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  station       Station   @relation(fields: [stationId], references: [id], onDelete: Cascade)
+}
+
+model TrainSelection {
+  id          String   @id @default(cuid())
+  orderId     String   @unique
+  lineName    String?
+  destination String?
+  departureAt DateTime?
+  platform    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String?
+  orderId   String?
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+enum Size {
+  REGULAR
+  LARGE
+}
+
+enum Category {
+  COFFEE
+  TEA
+  PASTRY
+  SNACK
+  COLD_DRINK
+  CHOCOLATE
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  COLLECTED
+  CANCELLED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum LoyaltyRecordType {
+  EARN
+  REDEEM
+  ADJUSTMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_UPDATED
+  ORDER_READY
+  ORDER_CANCELLED
+  LOYALTY_UPDATED
+}
