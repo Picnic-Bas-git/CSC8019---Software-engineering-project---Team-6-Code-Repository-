@@ -58,7 +58,11 @@ export default function RegisterPage() {
 
       // Show backend error if registration failed
       if (!res.ok) {
-        setError(data.error || 'Registration failed');
+        const fieldErrors = data.details?.fieldErrors;
+        const firstFieldError =
+          fieldErrors &&
+          Object.values(fieldErrors).flat().filter(Boolean)[0];
+        setError(firstFieldError || data.error || 'Registration failed');
         return;
       }
 
@@ -124,7 +128,7 @@ export default function RegisterPage() {
               <Input
                 id="phone"
                 name="phone"
-                placeholder="+44..."
+                placeholder="+44...[min 11 digits]"
                 autoComplete="tel"
                 required
               />

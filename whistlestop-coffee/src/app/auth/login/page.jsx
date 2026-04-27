@@ -50,7 +50,11 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        const fieldErrors = data.details?.fieldErrors;
+        const firstFieldError =
+          fieldErrors &&
+          Object.values(fieldErrors).flat().filter(Boolean)[0];
+        setError(firstFieldError || data.error || 'Login failed');
         return;
       }
 

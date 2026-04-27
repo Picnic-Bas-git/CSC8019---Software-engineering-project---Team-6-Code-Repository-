@@ -51,7 +51,7 @@ export async function POST(req) {
       data: {
         name,
         email,
-        phone: phone || null,
+        phone,
         passwordHash,
       },
       // Return only safe user fields in the response
