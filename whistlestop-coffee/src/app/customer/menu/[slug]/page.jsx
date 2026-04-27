@@ -1,0 +1,111 @@
+import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
+import { Card, CardContent } from '@/components/ui/card';
+import AddToCartPanel from '../AddToCartPanel';
+
+/**
+ * Displays a single menu item's detail page.
+ * Reads the item slug from the route params,
+ * loads the matching menu item directly from the database,
+ * and shows its size and quantity selection UI.
+ */
+export default async function MenuItemPage({ params }) {
+  // Get the dynamic route parameter, for example: /customer/menu/latte
+  const { slug } = await params;
+
+  let item = null;
+
+  try {
+    // Load the matching menu item from the database
+    const dbItem = await prisma.menuItem.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        imageUrl: true,
+        priceRegular: true,
+        priceLarge: true,
+        isAvailable: true,
+      },
+    });
+
+    // Map the database item into the shape expected by the current frontend
+    if (dbItem) {
+      item = {
+        id: dbItem.id,
+        slug: dbItem.slug,
+        name: dbItem.name,
+        description: dbItem.description,
+        isAvailable: dbItem.isAvailable,
+        imageUrl: dbItem.imageUrl,
+        prices: {
+          regular: dbItem.priceRegular,
+          large: dbItem.priceLarge,
+        },
+      };
+    }
+  } catch (error) {
+    // Keep item as null if the database query fails
+    console.error('MENU DETAIL PAGE ERROR:', error);
+  }
+
+  // If no matching item is found, show a fallback message
+  if (!item) {
+    return (
+      <div className="space-y-3">
+        <div className="text-lg font-semibold">Item not found</div>
+        <Link href="/customer/menu" className="text-sm underline">
+          Back to menu
+        </Link>
+      </div>
+    );
+  }
+
+  // Check whether this item supports a large size
+  const hasLarge = item.prices.large != null;
+
+  return (
+    <div className="mx-auto max-w-md space-y-4">
+      {/* Hero section with item name and pricing */}
+      <div className="bg-primary/10 coffee-card relative h-40 w-full overflow-hidden rounded-2xl">
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
+        )}
+
+        <div className="absolute inset-0 bg-black/20" />
+
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className="text-xl font-semibold text-white">{item.name}</div>
+          <div className="text-sm text-white/90">
+            {hasLarge
+              ? `Regular £${item.prices.regular.toFixed(2)} · Large £${item.prices.large.toFixed(2)}`
+              : `£${item.prices.regular.toFixed(2)}`}
+          </div>
+        </div>
+      </div>
+
+      {/* Card containing selection controls */}
+      <Card className="border-border/60 bg-card/70 coffee-card">
+        {/* Instruction text and add-to-cart controls */}
+        <CardContent className="space-y-4 p-4">
+          <AddToCartPanel item={item} />
+
+          <Link
+            href="/customer/menu"
+            className="text-muted-foreground block text-center text-xs underline"
+          >
+            Back to menu
+          </Link>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

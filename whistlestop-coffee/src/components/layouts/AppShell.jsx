@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// React hook for reading session data on the client
+// React hook for reading account and cart data on the client
 import { useEffect, useState } from 'react';
 
 // Theme toggle button component
@@ -15,12 +15,6 @@ import { Button } from '@/components/ui/button';
 
 // Icons used in the layout and bottom navigation
 import { User, Coffee, ClipboardList, Gift, ShoppingCart } from 'lucide-react';
-
-// Zustand cart store hook for deriving total cart quantity
-import { useCartStore } from '@/lib/cart-store';
-
-// Session utility for reading the current logged-in user
-import { getSession } from '@/lib/session';
 
 /**
  * Reusable bottom navigation tab.
@@ -71,18 +65,61 @@ export default function AppShell({
   // Current pathname, used to detect which nav item is active
   const pathname = usePathname();
 
-  // Holds the current session so account navigation can adapt by role
-  const [session, setSession] = useState(null);
+  // Holds the current logged-in user returned by the backend
+  const [user, setUser] = useState(null);
 
-  // Read the saved session once on mount
+  // Holds the total cart quantity returned from the backend cart
+  const [cartCount, setCartCount] = useState(0);
+
+  // Load the current user and cart once on mount from the real backend
   useEffect(() => {
-    setSession(getSession());
-  }, []);
+    async function loadUser() {
+      try {
+        const userRes = await fetch('/api/auth/me');
+        const userData = await userRes.json();
 
-  // Total number of items in the cart, summed across all line items
-  const cartCount = useCartStore((s) =>
-    s.items.reduce((sum, i) => sum + i.qty, 0),
-  );
+        if (userRes.ok) {
+          setUser(userData.user);
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      }
+    }
+
+    async function loadCartCount() {
+      try {
+        const cartRes = await fetch('/api/cart');
+        const cartData = await cartRes.json();
+
+        if (cartRes.ok) {
+          const totalCount = (cartData.items || []).reduce(
+            (sum, item) => sum + item.quantity,
+            0,
+          );
+          setCartCount(totalCount);
+        } else {
+          setCartCount(0);
+        }
+      } catch {
+        setCartCount(0);
+      }
+    }
+
+    function handleCartUpdated() {
+      loadCartCount();
+    }
+
+    loadUser();
+    loadCartCount();
+
+    window.addEventListener('cart-updated', handleCartUpdated);
+
+    return () => {
+      window.removeEventListener('cart-updated', handleCartUpdated);
+    };
+  }, [pathname]);
 
   /**
    * Returns true when the current route matches the given href
@@ -95,10 +132,17 @@ export default function AppShell({
 
   // Determine where the account button should go
   const accountHref =
-    session?.role === 'staff'
+    user?.role === 'STAFF' || user?.role === 'ADMIN'
       ? '/staff/dashboard'
-      : session?.role === 'customer'
+      : user?.role === 'CUSTOMER'
         ? '/customer/account'
+        : '/auth/login';
+
+  const homeHref =
+    user?.role === 'STAFF' || user?.role === 'ADMIN'
+      ? '/staff/dashboard'
+      : user
+        ? '/customer/menu'
         : '/auth/login';
 
   return (
@@ -121,7 +165,7 @@ export default function AppShell({
               </div>
 
               <h1 className="text-2xl font-semibold tracking-tight">
-                <Link href="/" className="hover:opacity-90">
+                <Link href={homeHref} className="hover:opacity-90">
                   {title || 'Whistlestop Coffee Hut'}
                 </Link>
               </h1>
@@ -155,7 +199,7 @@ export default function AppShell({
                 </Link>
               ) : null}
 
-              {/* Account shortcut routes based on session role */}
+              {/* Account shortcut routes based on logged-in user role */}
               <Link href={accountHref}>
                 <Button
                   variant="outline"
