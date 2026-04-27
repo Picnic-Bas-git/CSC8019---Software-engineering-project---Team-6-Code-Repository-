@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whistlestop Coffee Hut - UML Database Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: white;
+            padding: 40px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            page-break-after: avoid;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            page-break-after: avoid;
+        }
+        
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            page-break-after: avoid;
+        }
+        
+        h4 {
+            color: #666;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin: 15px 0 15px 40px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        code {
+            background-color: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #d63384;
+        }
+        
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+            margin: 15px 0;
+            page-break-inside: avoid;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: #333;
+        }
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            page-break-inside: avoid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        table th {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #2980b9;
+        }
+        
+        table td {
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            background-color: #fff;
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        table tr:hover {
+            background-color: #ecf0f1;
+        }
+        
+        .diagram-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 2px dashed #3498db;
+            page-break-inside: avoid;
+            text-align: center;
+        }
+        
+        .diagram-title {
+            color: #2c3e50;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        blockquote {
+            border-left: 4px solid #3498db;
+            padding-left: 20px;
+            margin-left: 0;
+            color: #666;
+            font-style: italic;
+        }
+        
+        strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .entity-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+            page-break-inside: avoid;
+        }
+        
+        .entity-title {
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        
+        .property {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+        
+        .property code {
+            background: white;
+            padding: 2px 5px;
+        }
+        
+        hr {
+            border: none;
+            border-top: 2px solid #3498db;
+            margin: 40px 0;
+            page-break-before: avoid;
+        }
+        
+        .toc {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        
+        .toc h3 {
+            margin-top: 0;
+        }
+        
+        .toc ol {
+            columns: 2;
+            column-gap: 30px;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            page-break-before: avoid;
+        }
+        
+        .version-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .key-feature {
+            background: #f0f8e8;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 8px 0;
+            border-left: 3px solid #27ae60;
+        }
+        
+        @media print {
+            body {
+                padding: 10mm;
+            }
+            
+            h1 {
+                page-break-before: avoid;
+            }
+            
+            h2 {
+                page-break-before: avoid;
+                margin-top: 30px;
+            }
+            
+            table, pre, .entity-box, .diagram-container {
+                page-break-inside: avoid;
+            }
+            
+            a {
+                color: #2980b9;
+                text-decoration: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Whistlestop Coffee Hut</h1>
+    <h1 style="border: none; padding: 0; margin: -20px 0 30px 0; font-size: 1.8em; color: #3498db;">UML Database Design</h1>
+    
+    <div class="version-info">
+        <strong>Project:</strong> Whistlestop Coffee Hut - CSC8019 Team 6<br>
+        <strong>Database:</strong> Aiven MySQL<br>
+        <strong>ORM:</strong> Prisma<br>
+        <strong>Version:</strong> 1.0<br>
+        <strong>Date:</strong> April 2026
+    </div>
+
+    <h2>Project Overview</h2>
+    <p>
+        Whistlestop Coffee Hut is a comprehensive coffee ordering system that allows users to:
+    </p>
+    <ul>
+        <li>Browse menu items</li>
+        <li>View individual menu item details</li>
+        <li>Add items to shopping cart</li>
+        <li>Register and login</li>
+        <li>View customer pages (loyalty rewards, order status, etc.)</li>
+        <li>Access staff pages (dashboard, archive, etc.)</li>
+    </ul>
+
+    <h2>Core Entity Design</h2>
+
+    <div class="entity-box">
+        <div class="entity-title">1. User</div>
+        <p><strong>Purpose:</strong> Stores customer and staff user information</p>
+        <p><strong>Key Fields:</strong></p>
+        <ul>
+            <li><code>id</code> - Unique identifier (CUID)</li>
+            <li><code>email</code> - Unique email address</li>
+            <li><code>role</code> - User role (CUSTOMER, STAFF, ADMIN)</li>
+            <li><code>loyaltyPoints</code> - Accumulated loyalty points</li>
+            <li><code>loyaltyStamps</code> - Collected stamps</li>
+        </ul>
+        <p><strong>Relationships:</strong></p>
+        <ul>
+            <li>Has multiple CartItems</li>
+            <li>Places multiple Orders</li>
+            <li>Has LoyaltyRecords</li>
+            <li>Receives Notifications</li>
+        </ul>
+    </div>
+
+    <div class="entity-box">
+        <div class="entity-title">2. Station</div>
+        <p><strong>Purpose:</strong> Represents each coffee station location</p>
+        <p><strong>Key Fields:</strong></p>
+        <ul>
+            <li><code>id</code> - Unique identifier</li>
+            <li><code>slug</code> - URL-friendly identifier</li>
+            <li><code>location</code> - Physical location details</li>
+            <li><code>isActive</code> - Operational status</li>
+        </ul>
+        <p><strong>Relationships:</strong></p>
+        <ul>
+            <li>Has multiple OpeningHours</li>
+            <li>Offers StationMenuItems</li>
+            <li>Fulfills multiple Orders</li>
+        </ul>
+    </div>
+
+    <div class="entity-box">
+        <div class="entity-title">3. MenuItem</div>
+        <p><strong>Purpose:</strong> Core product offerings</p>
+        <p><strong>Key Fields:</strong></p>
+        <ul>
+            <li><code>name</code> - Item name</li>
+            <li><code>slug</code> - URL identifier</li>
+            <li><code>category</code> - Product category</li>
+            <li><code>priceRegular / priceLarge</code> - Pricing by size</li>
+            <li><code>isAvailable</code> - Availability status</li>
+        </ul>
+        <p><strong>Categories:</strong> COFFEE, TEA, PASTRY, SNACK, COLD_DRINK, CHOCOLATE</p>
+    </div>
+
+    <div class="entity-box">
+        <div class="entity-title">4. Order</div>
+        <p><strong>Purpose:</strong> Represents customer orders</p>
+        <p><strong>Key Fields:</strong></p>
+        <ul>
+            <li><code>userId</code> - Customer who placed order</li>
+            <li><code>stationId</code> - Pickup location</li>
+            <li><code>status</code> - Order status</li>
+            <li><code>totalAmount</code> - Final order cost</li>
+            <li><code>pickupTime</code> - Scheduled pickup time</li>
+            <li><code>isArchived</code> - Staff archive status</li>
+        </ul>
+        <p><strong>Status Flow:</strong> PENDING → ACCEPTED → PREPARING → READY → COLLECTED</p>
+    </div>
+
+    <div class="entity-box">
+        <div class="entity-title">5. PaymentRecord</div>
+        <p><strong>Purpose:</strong> Payment transaction history</p>
+        <p><strong>Key Fields:</strong></p>
+        <ul>
+            <li><code>orderId</code> - Associated order (unique)</li>
+            <li><code>provider</code> - Payment provider</li>
+            <li><code>amount</code> - Payment amount</li>
+            <li><code>status</code> - PENDING, PAID, FAILED, REFUNDED</li>
+            <li><code>transactionRef</code> - Provider's transaction ID</li>
+        </ul>
+    </div>
+
+    <div class="entity-box">
+        <div class="entity-title">6. LoyaltyRecord</div>
+        <p><strong>Purpose:</strong> Tracks loyalty points and stamp transactions</p>
+        <p><strong>Transaction Types:</strong></p>
+        <ul>
+            <li><code>EARN</code> - Earn points</li>
+            <li><code>REDEEM</code> - Redeem points</li>
+            <li><code>ADJUSTMENT</code> - Manual adjustment</li>
+        </ul>
+    </div>
+
+    <h2>Key Design Features</h2>
+
+    <div class="key-feature">
+        <strong>1. Historical Data Preservation</strong>
+        <p><code>OrderItem</code> stores <code>nameAtTime</code> and <code>priceAtTime</code> to maintain historical accuracy. Even if menu items are updated, order history remains accurate.</p>
+    </div>
+
+    <div class="key-feature">
+        <strong>2. Soft Deletions</strong>
+        <p>Orders can be <code>isArchived</code> instead of deleted. This provides audit trail and data recovery.</p>
+    </div>
+
+    <div class="key-feature">
+        <strong>3. Location-Specific Inventory</strong>
+        <p><code>StationMenuItem</code> allows per-station stock and availability control. Different stations can have different inventories.</p>
+    </div>
+
+    <div class="key-feature">
+        <strong>4. Flexible Relationships</strong>
+        <p><code>Notification</code>'s <code>userId</code> and <code>orderId</code> are optional, supporting system-wide or order-specific notifications.</p>
+    </div>
+
+    <div class="key-feature">
+        <strong>5. Audit Trail</strong>
+        <p><code>AuditLog</code> tracks all important operations, supporting compliance and debugging.</p>
+    </div>
+
+    <h2>Database Constraints</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Entity</th>
+                <th>Constraint</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>User</code></td>
+                <td><code>email</code> unique</td>
+                <td>Prevent duplicate accounts</td>
+            </tr>
+            <tr>
+                <td><code>MenuItem</code></td>
+                <td><code>slug</code> unique</td>
+                <td>Enable URL routing</td>
+            </tr>
+            <tr>
+                <td><code>Station</code></td>
+                <td><code>slug</code> unique</td>
+                <td>Enable URL routing</td>
+            </tr>
+            <tr>
+                <td><code>CartItem</code></td>
+                <td><code>[userId, menuItemId, size]</code> unique</td>
+                <td>One cart item per user/item/size</td>
+            </tr>
+            <tr>
+                <td><code>StationMenuItem</code></td>
+                <td><code>[stationId, menuItemId]</code> unique</td>
+                <td>One record per station/item</td>
+            </tr>
+            <tr>
+                <td><code>PaymentRecord</code></td>
+                <td><code>orderId</code> unique</td>
+                <td>One payment per order</td>
+            </tr>
+            <tr>
+                <td><code>OpeningHour</code></td>
+                <td><code>[stationId, dayOfWeek]</code> unique</td>
+                <td>One record per station/day</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Technology Stack</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Technology</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Database</td>
+                <td>MySQL (Aiven Cloud)</td>
+            </tr>
+            <tr>
+                <td>ORM</td>
+                <td>Prisma</td>
+            </tr>
+            <tr>
+                <td>Framework</td>
+                <td>Next.js</td>
+            </tr>
+            <tr>
+                <td>Language</td>
+                <td>JavaScript/TypeScript</td>
+            </tr>
+            <tr>
+                <td>Authentication</td>
+                <td>JWT Session-based</td>
+            </tr>
+            <tr>
+                <td>UI Components</td>
+                <td>shadcn/ui</td>
+            </tr>
+            <tr>
+                <td>Styling</td>
+                <td>Tailwind CSS</td>
+            </tr>
+            <tr>
+                <td>Icons</td>
+                <td>Lucide React</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>All Entities List</h2>
+    <ol style="columns: 2; column-gap: 40px;">
+        <li>User</li>
+        <li>Station</li>
+        <li>MenuItem</li>
+        <li>StationMenuItem</li>
+        <li>CartItem</li>
+        <li>Order</li>
+        <li>OrderItem</li>
+        <li>LoyaltyRecord</li>
+        <li>PaymentRecord</li>
+        <li>OpeningHour</li>
+        <li>TrainSchedule</li>
+        <li>TrainSelection</li>
+        <li>Notification</li>
+        <li>AuditLog</li>
+    </ol>
+
+    <div class="diagram-container">
+        <div class="diagram-title">🎯 ER Diagram and UML Class Diagram</div>
+        <p style="text-align: center; color: #666; margin-top: 10px;">
+            For complete ER diagram and UML class diagram, please refer to the <code>UML_DATABASE_DESIGN.md</code> file in the project
+        </p>
+    </div>
+
+    <h2>How to Use This Documentation</h2>
+    <ol>
+        <li><strong>Understand Database Structure:</strong> Read the description of each entity to understand its purpose and key fields</li>
+        <li><strong>View Relationships:</strong> Understand the relationships and constraints between entities</li>
+        <li><strong>Reference Design Principles:</strong> Learn about design features such as historical data preservation and soft deletions</li>
+        <li><strong>Consult Complete Diagrams:</strong> Refer to the ER diagram and UML class diagram in the Markdown version</li>
+    </ol>
+
+    <h2>How to Print as PDF</h2>
+    <div style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 20px 0;">
+        <strong>To save this document as PDF:</strong>
+        <ol>
+            <li>Press <code>Ctrl + P</code> (Windows) or <code>Cmd + P</code> (Mac) to open the print dialog</li>
+            <li>Select "Save as PDF" as the printer</li>
+            <li>Click the "Save" button</li>
+            <li>Choose the save location and file name</li>
+        </ol>
+    </div>
+
+    <div class="footer">
+        <p><strong>Whistlestop Coffee Hut - CSC8019 Software Engineering Team 6</strong></p>
+        <p>Database Design Documentation | Version 1.0 | April 2026</p>
+        <p style="margin-top: 10px; color: #999;">🗄️ MySQL Database on Aiven Cloud | 🔧 Prisma ORM | ⚛️ Next.js Framework</p>
+    </div>
+</body>
+</html>

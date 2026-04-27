@@ -31,6 +31,7 @@ This application is a coffee ordering system for Whistlestop Coffee Hut. It incl
 21. Team Best Practices
 22. Troubleshooting
 23. Beginner Tips
+24. Diagram Quality, Detail, and Appropriateness
 
 ---
 
@@ -90,7 +91,16 @@ To check Node and Git:
 ## 4.3 Install dependencies
         npm install
 
-## 4.4 Start the development server
+## 4.4 Set up environment variables
+Copy the example file and add your own database credentials:
+        cp .env.example .env
+
+If you are using PowerShell on Windows:
+        Copy-Item .env.example .env
+
+Then update `.env` with your real values.
+
+## 4.5 Start the development server
         npm run dev
 
 Open:
@@ -758,3 +768,48 @@ If something is broken with packages:
 
         rm -rf node_modules package-lock.json
         npm install
+
+# 23. Beginner Tips
+If you are new to software engineering projects, use this simple workflow:
+
+- read one small section of the codebase at a time
+- run the app after every small change
+- write clear commit messages that explain your intention
+- ask teammates to review early, not only at the end
+- keep your branch up to date with `main`
+
+When you are unsure where to start, begin with:
+- `src/app/page.js` (entry page behavior)
+- `src/components/layouts/AppShell.jsx` (shared layout pattern)
+- `src/lib` (reusable helper logic)
+
+# 24. Diagram Quality, Detail, and Appropriateness
+This section describes the expected standard for diagrams used in this project report and documentation.
+
+## 24.1 Overall quality
+A high-quality diagram should be:
+- visually clean and easy to read
+- consistent in naming, shapes, and flow direction
+- free from overlapping connectors and ambiguous arrows
+- aligned with the actual implementation in the repository
+
+## 24.2 Level of detail
+Diagrams must include enough detail to communicate design decisions without becoming cluttered.
+
+Good detail usually means:
+- key components/modules are clearly identified
+- important relationships are shown (data flow, dependencies, ownership)
+- major user or system interactions are represented
+
+Avoid:
+- overloading diagrams with low-level code details
+- leaving out core architectural elements that affect understanding
+
+## 24.3 Appropriateness to purpose
+Each diagram type should match the question it answers:
+- architecture diagrams explain system structure and boundaries
+- sequence diagrams explain runtime interactions over time
+- entity relationship diagrams explain data structure and constraints
+- flow/activity diagrams explain process logic and decision points
+
+In short, the overall quality, detail, and appropriateness of your diagrams should help a new reader understand both the system design and the rationale behind key engineering choices.
