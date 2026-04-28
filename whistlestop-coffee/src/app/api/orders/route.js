@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/session';
 import { createOrderSchema } from '@/lib/validations/order';
+import { processHorsePayPayment } from '@/lib/horsepay';
 
 /*
   This route handles order creation and order history for the current user.
@@ -12,17 +13,17 @@ import { createOrderSchema } from '@/lib/validations/order';
   POST:
   - creates a new order from the user's current cart
   - calculates totals on the backend
+  - processes HorsePay payment
   - stores order items
+  - stores payment record
   - clears the user's cart
   - updates loyalty points and stamps
 */
 
 export async function GET() {
   try {
-    // Ensure the user is signed in before accessing order history
     const user = await requireUser();
 
-    // Load all orders for the current user, including their order items
     const orders = await prisma.order.findMany({
       where: {
         userId: user.id,
@@ -30,24 +31,19 @@ export async function GET() {
       include: {
         items: true,
       },
-      // Show the most recent orders first
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    // Return the user's order history
     return NextResponse.json({ orders }, { status: 200 });
   } catch (error) {
-    // Log the error for debugging
     console.error('ORDERS GET ERROR:', error);
 
-    // Return 401 if the user is not authenticated
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Return a server error if loading orders fails
     return NextResponse.json(
       {
         error: 'Failed to load orders',
@@ -60,10 +56,8 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    // Ensure the user is signed in before placing an order
     const user = await requireUser();
 
-    // Read and validate the submitted order data
     const body = await req.json();
     const parsed = createOrderSchema.safeParse(body);
 
@@ -74,10 +68,9 @@ export async function POST(req) {
       );
     }
 
-    // Extract validated order details
     const { pickupName, notes } = parsed.data;
 
-    // Load the current cart, including related menu item details and pricing
+    // Load the current cart including menu item pricing
     const cartItems = await prisma.cartItem.findMany({
       where: {
         userId: user.id,
@@ -85,44 +78,37 @@ export async function POST(req) {
       include: {
         menuItem: true,
       },
-      // Keep cart item order consistent
       orderBy: {
         createdAt: 'asc',
       },
     });
 
-    // Prevent an order being created from an empty cart
     if (cartItems.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    // Validate all cart items and calculate the total order amount
+    // Validate all items are still available and calculate totals
     let totalAmount = 0;
 
     const orderItemsData = cartItems.map((item) => {
-      // Ensure the menu item still exists and is available
       if (!item.menuItem || !item.menuItem.isAvailable) {
         throw new Error(
           `Item unavailable: ${item.menuItem?.name || 'Unknown item'}`,
         );
       }
 
-      // Prevent large size selection if the item has no large price
       if (item.size === 'LARGE' && item.menuItem.priceLarge == null) {
         throw new Error(`Large size unavailable for ${item.menuItem.name}`);
       }
 
-      // Use the correct price based on the selected size
       const unitPrice =
         item.size === 'LARGE'
           ? (item.menuItem.priceLarge ?? item.menuItem.priceRegular)
           : item.menuItem.priceRegular;
 
-      // Add the line total to the order total
       const lineTotal = unitPrice * item.quantity;
       totalAmount += lineTotal;
 
-      // Save a snapshot of item details at the time of ordering
       return {
         menuItemId: item.menuItemId,
         nameAtTime: item.menuItem.name,
@@ -132,20 +118,44 @@ export async function POST(req) {
       };
     });
 
-    // Loyalty rule:
+    // Step 1: process payment before creating the order
+    const paymentResponse = await processHorsePayPayment({
+      customerId: user.id,
+      amount: totalAmount,
+      currencyCode: 'GBP',
+    });
+
+    // HorsePay docs use this exact key name
+    const paymentResult = paymentResponse?.paymetSuccess;
+    const paymentSucceeded = paymentResult?.Status === true;
+    const paymentReason = paymentResult?.reason || 'Unknown payment result';
+
+    // If payment fails, do not create the order
+    if (!paymentSucceeded) {
+      return NextResponse.json(
+        {
+          error: 'Payment failed',
+          reason: paymentReason,
+          payment: paymentResponse,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Basic loyalty logic:
     // 1 stamp per order, 1 point per whole pound spent
     const loyaltyPointsEarned = Math.floor(totalAmount);
     const loyaltyStampsEarned = 1;
 
-    // Use a transaction so order creation, loyalty updates,
-    // and cart clearing either all succeed or all fail together
     const order = await prisma.$transaction(async (tx) => {
-      // Create the main order and its related order items
+      // Create the main order
       const newOrder = await tx.order.create({
         data: {
           userId: user.id,
           totalAmount,
           status: 'PENDING',
+          pickupName: pickupName.trim(),
+          notes: notes?.trim() || null,
           items: {
             create: orderItemsData,
           },
@@ -155,7 +165,20 @@ export async function POST(req) {
         },
       });
 
-      // Record the loyalty points and stamp changes
+      // Store successful payment record
+      await tx.paymentRecord.create({
+        data: {
+          orderId: newOrder.id,
+          provider: 'HORSEPAY',
+          amount: totalAmount,
+          currency: 'GBP',
+          status: 'PAID',
+          transactionRef: `${newOrder.id}-${Date.now()}`,
+          paidAt: new Date(),
+        },
+      });
+
+      // Record loyalty changes
       await tx.loyaltyRecord.create({
         data: {
           userId: user.id,
@@ -167,7 +190,7 @@ export async function POST(req) {
         },
       });
 
-      // Update the user's total loyalty values
+      // Update user loyalty totals
       await tx.user.update({
         where: { id: user.id },
         data: {
@@ -180,7 +203,7 @@ export async function POST(req) {
         },
       });
 
-      // Clear the user's cart after the order is created successfully
+      // Clear the user's cart after successful order creation
       await tx.cartItem.deleteMany({
         where: {
           userId: user.id,
@@ -190,11 +213,11 @@ export async function POST(req) {
       return newOrder;
     });
 
-    // Return a success response with the created order and loyalty summary
     return NextResponse.json(
       {
-        message: 'Order placed successfully',
+        message: 'Payment successful and order placed',
         order,
+        payment: paymentResponse,
         loyalty: {
           pointsEarned: loyaltyPointsEarned,
           stampsEarned: loyaltyStampsEarned,
@@ -203,15 +226,12 @@ export async function POST(req) {
       { status: 201 },
     );
   } catch (error) {
-    // Log the error for debugging
     console.error('ORDERS POST ERROR:', error);
 
-    // Return 401 if the user is not authenticated
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Return a server error if order creation fails
     return NextResponse.json(
       {
         error: 'Failed to place order',

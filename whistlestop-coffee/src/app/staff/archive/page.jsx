@@ -174,6 +174,23 @@ export default function StaffArchivePage() {
                 </div>
               </div>
 
+              {/* Pickup details entered during checkout */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <div className="text-muted-foreground text-xs">
+                    Pickup name
+                  </div>
+                  <div className="font-medium">{order.pickupName || '-'}</div>
+                </div>
+
+                {order.notes ? (
+                  <div>
+                    <div className="text-muted-foreground text-xs">Notes</div>
+                    <div className="font-medium">{order.notes}</div>
+                  </div>
+                ) : null}
+              </div>
+
               {/* Archived metadata */}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>

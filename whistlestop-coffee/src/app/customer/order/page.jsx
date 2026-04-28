@@ -119,7 +119,7 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Failed to place order');
+        setError(data.reason || data.error || 'Failed to place order');
         return;
       }
 
@@ -244,7 +244,9 @@ export default function CheckoutPage() {
               onClick={handlePlaceOrder}
               disabled={submitting || !pickupName.trim()}
             >
-              {submitting ? 'Placing...' : `Place order · ${money(subtotal)}`}
+              {submitting
+                ? 'Processing payment...'
+                : `Pay and place order · ${money(subtotal)}`}
             </Button>
           </div>
         </CardContent>
