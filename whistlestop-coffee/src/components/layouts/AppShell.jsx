@@ -53,8 +53,8 @@ function Tab({ href, label, icon: Icon, isActive }) {
 
 /**
  * Shared application shell used across customer, auth, and staff pages.
- * Handles the page header, optional customer cart shortcut,
- * optional mobile customer tabs, and the main content area.
+ * Handles the page header, customer cart shortcut,
+ * mobile customer tabs, and the main content area.
  */
 export default function AppShell({
   title,
@@ -170,7 +170,7 @@ export default function AppShell({
                 </Link>
               </h1>
 
-              {/* Optional subtitle under the title */}
+              {/* subtitle under the title */}
               {subtitle ? (
                 <p className="text-muted-foreground text-sm">{subtitle}</p>
               ) : null}

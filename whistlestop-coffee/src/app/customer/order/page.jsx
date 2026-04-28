@@ -1,5 +1,5 @@
 'use client';
-
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -23,11 +23,16 @@ export default function CheckoutPage() {
   // Holds the logged-in user from the backend
   const [user, setUser] = useState(null);
 
-  // Pickup name entered by the customer
-  const [pickupName, setPickupName] = useState('');
+  // Use search params
+  const searchParams = useSearchParams();
 
-  // Optional checkout notes
-  const [notes, setNotes] = useState('');
+  // Pickup name entered by the customer
+  const [pickupName, setPickupName] = useState(
+    searchParams.get('pickupName') || '',
+  );
+
+  // checkout notes
+  const [notes, setNotes] = useState(searchParams.get('notes') || '');
 
   // Tracks whether the page is still loading cart/user data
   const [isLoading, setIsLoading] = useState(true);
@@ -95,42 +100,17 @@ export default function CheckoutPage() {
   );
 
   /**
-   * Places the order through the backend order endpoint.
-   * The backend will create the order from the user's cart.
+   * Continue to payment
    */
-  async function handlePlaceOrder() {
-    if (!items.length || submitting || !pickupName.trim()) return;
+  function handleContinueToPayment() {
+    if (!items.length || !pickupName.trim()) return;
 
-    try {
-      setSubmitting(true);
-      setError('');
+    const params = new URLSearchParams({
+      pickupName: pickupName.trim(),
+      notes: notes.trim(),
+    });
 
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pickupName: pickupName.trim(),
-          notes: notes.trim(),
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.reason || data.error || 'Failed to place order');
-        return;
-      }
-
-      // Redirect to status page for the newly placed order
-      router.push(`/customer/status?placed=${data.order.id}`);
-      router.refresh();
-    } catch {
-      setError('Something went wrong while placing your order.');
-    } finally {
-      setSubmitting(false);
-    }
+    router.push(`/customer/payment?${params.toString()}`);
   }
 
   // Loading state while waiting for checkout data
@@ -241,12 +221,10 @@ export default function CheckoutPage() {
 
             <Button
               className="sm:order-2"
-              onClick={handlePlaceOrder}
-              disabled={submitting || !pickupName.trim()}
+              onClick={handleContinueToPayment}
+              disabled={!pickupName.trim()}
             >
-              {submitting
-                ? 'Processing payment...'
-                : `Pay and place order · ${money(subtotal)}`}
+              {`Continue to payment · ${money(subtotal)}`}
             </Button>
           </div>
         </CardContent>
