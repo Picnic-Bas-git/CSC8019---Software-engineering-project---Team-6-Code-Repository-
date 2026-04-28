@@ -272,6 +272,21 @@ export default function StatusPage() {
                 </div>
               </div>
 
+              {/* Pickup details entered during checkout */}
+              <div className="space-y-1">
+                <div className="text-muted-foreground text-xs">Pickup name</div>
+                <div className="font-medium">
+                  {selectedOrder.pickupName || '-'}
+                </div>
+              </div>
+
+              {selectedOrder.notes ? (
+                <div className="space-y-1">
+                  <div className="text-muted-foreground text-xs">Notes</div>
+                  <div className="font-medium">{selectedOrder.notes}</div>
+                </div>
+              ) : null}
+
               {/* Ordered items */}
               <div className="space-y-3 pt-2">
                 <div className="text-sm font-medium">Items</div>
@@ -309,7 +324,7 @@ export default function StatusPage() {
                   </Button>
                 </Link>
 
-                <Link href="/customer/order" className="sm:flex-1">
+                <Link href="/customer/menu" className="sm:flex-1">
                   <Button className="w-full">Order again</Button>
                 </Link>
               </div>

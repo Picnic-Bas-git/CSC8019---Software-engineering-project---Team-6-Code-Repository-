@@ -124,6 +124,11 @@ model Order {
   stationId          String?
   totalAmount        Float
   status             OrderStatus     @default(PENDING)
+
+  // Customer-entered pickup details captured during checkout
+  pickupName         String?
+  notes              String?
+
   pickupTime         DateTime?
   cancelledAt        DateTime?
   cancellationReason String?

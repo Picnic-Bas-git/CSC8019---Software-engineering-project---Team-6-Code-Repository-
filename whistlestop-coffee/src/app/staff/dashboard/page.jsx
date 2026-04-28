@@ -301,6 +301,23 @@ export default function StaffDashboardPage() {
                   </div>
                 </div>
 
+                {/* Pickup details entered during checkout */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <div className="text-muted-foreground text-xs">
+                      Pickup name
+                    </div>
+                    <div className="font-medium">{order.pickupName || '-'}</div>
+                  </div>
+
+                  {order.notes ? (
+                    <div>
+                      <div className="text-muted-foreground text-xs">Notes</div>
+                      <div className="font-medium">{order.notes}</div>
+                    </div>
+                  ) : null}
+                </div>
+
                 {/* Ordered items */}
                 <div className="space-y-3">
                   <div className="text-sm font-medium">Items</div>
