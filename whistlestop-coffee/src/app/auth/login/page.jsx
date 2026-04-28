@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// React hook for handling loading and error UI state
+// React hook for handling loading and field-level error UI state
 import { useState } from 'react';
 
 // Reusable UI components
@@ -17,26 +17,70 @@ export default function LoginPage() {
   // Router lets us redirect the user after login
   const router = useRouter();
 
+  // Tracks whether the form is currently being submitted
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+
+  // Stores field-specific and general login errors
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    general: '',
+  });
+
+  /**
+   * Validates email using a simple practical email pattern.
+   */
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 
   /**
    * Handles form submission.
-   * Prevents the default page reload, reads the email input,
-   * determines whether the user is staff or customer,
-   * stores the session, then redirects to the correct page.
+   * Prevents the default page reload, reads the email and password,
+   * validates them on the client,
+   * sends them to the backend login endpoint,
+   * then redirects the user based on their role.
    */
   async function onContinue(e) {
     e.preventDefault();
-    setError('');
+
+    // Clear previous errors and begin loading state
+    setErrors({
+      email: '',
+      password: '',
+      general: '',
+    });
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
 
-    // Get the entered email from the form, fallback to empty string
+    // Get the entered values from the form
     const email = formData.get('email')?.toString().trim() || '';
-
     const password = formData.get('password')?.toString() || '';
+
+    // Build client-side field errors
+    const newErrors = {
+      email: '',
+      password: '',
+      general: '',
+    };
+
+    // Validate email before sending to backend
+    if (!isValidEmail(email)) {
+      newErrors.email = 'Please enter a valid email address.';
+    }
+
+    // Validate password length before sending to backend
+    if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters.';
+    }
+
+    // Stop submission if any client-side errors exist
+    if (newErrors.email || newErrors.password) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -49,25 +93,33 @@ export default function LoginPage() {
 
       const data = await res.json();
 
+      // Show backend field errors or general login error
       if (!res.ok) {
-        const fieldErrors = data.details?.fieldErrors;
-        const firstFieldError =
-          fieldErrors &&
-          Object.values(fieldErrors).flat().filter(Boolean)[0];
-        setError(firstFieldError || data.error || 'Login failed');
+        const fieldErrors = data.details?.fieldErrors || {};
+
+        setErrors({
+          email: fieldErrors.email?.[0] || '',
+          password: fieldErrors.password?.[0] || '',
+          general: data.error || 'Login failed',
+        });
         return;
       }
 
       const role = data?.user?.role;
 
+      // Redirect staff/admin users to the staff dashboard
       if (role === 'STAFF' || role === 'ADMIN') {
         router.push('/staff/dashboard');
         return;
       }
 
+      // Redirect customers to the customer menu
       router.push('/customer/menu');
     } catch {
-      setError('Something went wrong. Please try again.');
+      setErrors((prev) => ({
+        ...prev,
+        general: 'Something went wrong. Please try again.',
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -99,10 +151,14 @@ export default function LoginPage() {
               <Input
                 id="email"
                 name="email"
+                type="email"
                 placeholder="name@email.com"
                 autoComplete="email"
                 required
               />
+              {errors.email ? (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              ) : null}
             </div>
 
             {/* Password field */}
@@ -115,10 +171,15 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
               />
+              {errors.password ? (
+                <p className="text-sm text-red-500">{errors.password}</p>
+              ) : null}
             </div>
 
-            {/*error displayed if there's a mistake*/}
-            {error ? <p className="text-sm text-red-500">{error}</p> : null}
+            {/* General error shown only when it is not tied to one field */}
+            {errors.general && !errors.email && !errors.password ? (
+              <p className="text-sm text-red-500">{errors.general}</p>
+            ) : null}
 
             {/* Submit button */}
             <Button type="submit" className="w-full" disabled={isLoading}>

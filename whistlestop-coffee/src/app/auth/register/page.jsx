@@ -1,6 +1,6 @@
 'use client';
 
-// React hook for handling loading and error UI state
+// React hook for handling loading and field-level error UI state
 import { useState } from 'react';
 
 // Enables client-side navigation between pages
@@ -20,12 +20,35 @@ export default function RegisterPage() {
   // Tracks whether the form is currently being submitted
   const [isLoading, setIsLoading] = useState(false);
 
-  // Stores any error message returned during registration
-  const [error, setError] = useState('');
+  // Stores field-specific validation errors
+  const [errors, setErrors] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    general: '',
+  });
+
+  /**
+   * Validates email using a simple practical email pattern.
+   */
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  /**
+   * Validates phone numbers by checking that the input
+   * contains at least 11 digits after removing non-digits.
+   */
+  function isValidPhone(phone) {
+    const cleanedPhone = phone.replace(/\D/g, '');
+    return cleanedPhone.length >= 11;
+  }
 
   /**
    * Handles account creation form submission.
    * Prevents page reload, reads the form values,
+   * validates them on the client,
    * sends them to the backend register endpoint,
    * then redirects the user to login if successful.
    */
@@ -34,7 +57,13 @@ export default function RegisterPage() {
     e.preventDefault();
 
     // Clear old errors and show loading state
-    setError('');
+    setErrors({
+      name: '',
+      email: '',
+      phone: '',
+      password: '',
+      general: '',
+    });
     setIsLoading(true);
 
     // Read values entered into the form
@@ -43,6 +72,44 @@ export default function RegisterPage() {
     const email = formData.get('email')?.toString().trim() || '';
     const phone = formData.get('phone')?.toString().trim() || '';
     const password = formData.get('password')?.toString() || '';
+
+    // Build field-specific client-side errors
+    const newErrors = {
+      name: '',
+      email: '',
+      phone: '',
+      password: '',
+      general: '',
+    };
+
+    if (name.length < 2) {
+      newErrors.name = 'Full name must be at least 2 characters.';
+    }
+
+    if (!isValidEmail(email)) {
+      newErrors.email = 'Please enter a valid email address.';
+    }
+
+    if (!isValidPhone(phone)) {
+      newErrors.phone =
+        'Please enter a valid phone number with at least 11 digits.';
+    }
+
+    if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters.';
+    }
+
+    // If any client-side validation failed, show field errors and stop
+    if (
+      newErrors.name ||
+      newErrors.email ||
+      newErrors.phone ||
+      newErrors.password
+    ) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       // Send registration request to backend
@@ -56,13 +123,18 @@ export default function RegisterPage() {
 
       const data = await res.json();
 
-      // Show backend error if registration failed
+      // Show backend field errors if registration failed
       if (!res.ok) {
-        const fieldErrors = data.details?.fieldErrors;
-        const firstFieldError =
-          fieldErrors &&
-          Object.values(fieldErrors).flat().filter(Boolean)[0];
-        setError(firstFieldError || data.error || 'Registration failed');
+        const fieldErrors = data.details?.fieldErrors || {};
+
+        setErrors({
+          name: fieldErrors.name?.[0] || '',
+          email: fieldErrors.email?.[0] || '',
+          phone: fieldErrors.phone?.[0] || '',
+          password: fieldErrors.password?.[0] || '',
+          general: data.error || 'Registration failed',
+        });
+
         return;
       }
 
@@ -70,7 +142,10 @@ export default function RegisterPage() {
       router.push('/auth/login');
     } catch {
       // Fallback error if request completely fails
-      setError('Something went wrong. Please try again.');
+      setErrors((prev) => ({
+        ...prev,
+        general: 'Something went wrong. Please try again.',
+      }));
     } finally {
       // Always stop loading state when request finishes
       setIsLoading(false);
@@ -106,7 +181,11 @@ export default function RegisterPage() {
                 placeholder="Your name"
                 autoComplete="name"
                 required
+                minLength={2}
               />
+              {errors.name ? (
+                <p className="text-sm text-red-500">{errors.name}</p>
+              ) : null}
             </div>
 
             {/* Email input */}
@@ -120,6 +199,9 @@ export default function RegisterPage() {
                 autoComplete="email"
                 required
               />
+              {errors.email ? (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              ) : null}
             </div>
 
             {/* Phone number input */}
@@ -128,13 +210,17 @@ export default function RegisterPage() {
               <Input
                 id="phone"
                 name="phone"
-                placeholder="+44...[min 11 digits]"
+                type="tel"
+                placeholder="+44... [min 11 digits]"
                 autoComplete="tel"
                 required
               />
+              {errors.phone ? (
+                <p className="text-sm text-red-500">{errors.phone}</p>
+              ) : null}
             </div>
 
-            {/* Password Input */}
+            {/* Password input */}
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -143,11 +229,21 @@ export default function RegisterPage() {
                 type="password"
                 autoComplete="new-password"
                 required
+                minLength={6}
               />
+              {errors.password ? (
+                <p className="text-sm text-red-500">{errors.password}</p>
+              ) : null}
             </div>
 
-            {/* Shows registration error if one exists */}
-            {error ? <p className="text-sm text-red-500">{error}</p> : null}
+            {/* General registration error for non-field-specific failures */}
+            {errors.general &&
+            !errors.name &&
+            !errors.email &&
+            !errors.phone &&
+            !errors.password ? (
+              <p className="text-sm text-red-500">{errors.general}</p>
+            ) : null}
 
             {/* Submit button */}
             <Button type="submit" className="w-full" disabled={isLoading}>
