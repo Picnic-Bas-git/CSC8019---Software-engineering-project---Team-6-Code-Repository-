@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic'; // force fix vercel prod build
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
