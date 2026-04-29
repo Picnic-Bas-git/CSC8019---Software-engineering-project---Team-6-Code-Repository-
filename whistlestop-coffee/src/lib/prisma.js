@@ -9,14 +9,14 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import 'dotenv/config';
-import fs from 'fs';
-import path from 'path';
 
 const globalForPrisma = globalThis;
 
-// Read Aiven project CA certificate
-const caPath = path.join(process.cwd(), 'certs', 'aiven-ca.pem');
-const ca = fs.readFileSync(caPath, 'utf8');
+const ca = process.env.AIVEN_CA_CERT;
+
+if (!ca) {
+  throw new Error('AIVEN_CA_CERT is missing from environment variables.');
+}
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST,
