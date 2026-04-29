@@ -125,7 +125,7 @@ function validatePaymentFields({ cardName, cardNumber, expiry, cvv }) {
   return '';
 }
 
-export default function PaymentPage() {
+export default function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
