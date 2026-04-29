@@ -211,6 +211,11 @@ export async function POST(req) {
       });
 
       return newOrder;
+    }, {
+      // Aiven MySQL is remote, so 5 sequential writes can exceed Prisma's
+      // default 5s interactive transaction timeout and surface as P2028.
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     return NextResponse.json(
@@ -226,7 +231,7 @@ export async function POST(req) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('ORDERS POST ERROR:', error);
+    console.error('ORDERS POST ERROR:', error, 'meta:', error?.meta);
 
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
