@@ -6,6 +6,12 @@ import { prisma } from '@/lib/prisma';
  * Cron job: Sweep and cancel ready orders 15 minutes past their pickup time.
  */
 export async function POST() {
+
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
     // 15-minute cutoff window based on customer pickup time
     const cutoffTime = new Date(Date.now() - 15 * 60 * 1000);
