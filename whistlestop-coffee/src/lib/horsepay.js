@@ -58,7 +58,7 @@ export async function processHorsePayPayment({
     currencyCode,
   };
 
-  // Optional developer testing field from HorsePay docs
+  // developer testing field from HorsePay docs
   if (forceStatus === 'true') {
     payload.forcePaymentSatusReturnType = true;
   } else if (forceStatus === 'false') {

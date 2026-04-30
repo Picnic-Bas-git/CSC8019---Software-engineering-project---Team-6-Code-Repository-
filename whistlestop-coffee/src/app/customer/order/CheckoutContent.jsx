@@ -25,6 +25,10 @@ export default function CheckoutContent() {
   // Use search params
   const searchParams = useSearchParams();
 
+  const [pickupTime, setPickupTime] = useState(
+    searchParams.get('pickupTime') || '',
+  );
+
   // Pickup name entered by the customer
   const [pickupName, setPickupName] = useState(
     searchParams.get('pickupName') || '',
@@ -102,11 +106,12 @@ export default function CheckoutContent() {
    * Continue to payment
    */
   function handleContinueToPayment() {
-    if (!items.length || !pickupName.trim()) return;
+    if (!items.length || !pickupName.trim() || !pickupTime) return;
 
     const params = new URLSearchParams({
       pickupName: pickupName.trim(),
       notes: notes.trim(),
+      pickupTime,
     });
 
     router.push(`/customer/payment?${params.toString()}`);
@@ -191,12 +196,24 @@ export default function CheckoutContent() {
           {error ? <div className="text-sm text-red-500">{error}</div> : null}
 
           <div className="space-y-2">
-            <Label htmlFor="pickup-name">Name for pickup</Label>
+            <Label htmlFor="pickup-name">Name for pickup *</Label>
             <Input
               id="pickup-name"
               value={pickupName}
+              required
               onChange={(e) => setPickupName(e.target.value)}
               placeholder="e.g. Alex"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pickup-time">Pickup time *</Label>
+            <Input
+              id="pickup-time"
+              type="time"
+              required
+              value={pickupTime}
+              onChange={(e) => setPickupTime(e.target.value)}
             />
           </div>
 
@@ -221,7 +238,7 @@ export default function CheckoutContent() {
             <Button
               className="sm:order-2"
               onClick={handleContinueToPayment}
-              disabled={!pickupName.trim()}
+              disabled={!pickupName.trim() || !pickupTime}
             >
               {`Continue to payment · ${money(subtotal)}`}
             </Button>

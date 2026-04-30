@@ -132,6 +132,7 @@ export default function PaymentContent() {
   // Read pickup details passed from the checkout details page
   const pickupName = searchParams.get('pickupName') || '';
   const notes = searchParams.get('notes') || '';
+  const pickupTime = searchParams.get('pickupTime') || '';
 
   // Holds current cart items from backend
   const [items, setItems] = useState([]);
@@ -151,19 +152,29 @@ export default function PaymentContent() {
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
 
+  // Loyalty item
+  const [loyalty, setLoyalty] = useState(null);
+  const [redeemFreeItem, setRedeemFreeItem] = useState(false);
+
   // Load backend cart for final payment summary
   useEffect(() => {
     async function loadCart() {
       try {
         setError('');
 
-        const res = await fetch('/api/cart', {
-          cache: 'no-store',
-        });
+        const [cartRes, loyaltyRes] = await Promise.all([
+          fetch('/api/cart', { cache: 'no-store' }),
+          fetch('/api/loyalty', { cache: 'no-store' }),
+        ]);
 
-        const data = await res.json();
+        const data = await cartRes.json();
+        const loyaltyData = await loyaltyRes.json();
 
-        if (!res.ok) {
+        if (loyaltyRes.ok) {
+          setLoyalty(loyaltyData.loyalty || null);
+        }
+
+        if (!cartRes.ok) {
           setError(data.error || 'Failed to load cart');
           setItems([]);
           return;
@@ -196,8 +207,15 @@ export default function PaymentContent() {
       cvv,
     });
 
+    // require name
     if (!pickupName.trim()) {
       setError('Pickup name is required.');
+      return;
+    }
+
+    // require time
+    if (!pickupTime) {
+      setError('Pickup time is required.');
       return;
     }
 
@@ -218,6 +236,8 @@ export default function PaymentContent() {
         body: JSON.stringify({
           pickupName,
           notes,
+          pickupTime,
+          redeemFreeItem,
         }),
       });
 
@@ -288,6 +308,11 @@ export default function PaymentContent() {
             <div className="font-medium">{pickupName || '-'}</div>
           </div>
 
+          <div className="space-y-1">
+            <div className="text-muted-foreground text-xs">Pickup time</div>
+            <div className="font-medium">{pickupTime || '-'}</div>
+          </div>
+
           {notes ? (
             <div className="space-y-1">
               <div className="text-muted-foreground text-xs">Notes</div>
@@ -322,6 +347,28 @@ export default function PaymentContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Free item reward */}
+      {loyalty?.stamps >= 9 ? (
+        <Card className="border-border/60 bg-card/70 coffee-card">
+          <CardContent className="space-y-3 p-4">
+            <div className="font-medium">Free item available</div>
+
+            <div className="text-muted-foreground text-sm">
+              You have 9 collected orders. Use your reward to make one item free
+              on this order.
+            </div>
+
+            <Button
+              type="button"
+              variant={redeemFreeItem ? 'default' : 'outline'}
+              onClick={() => setRedeemFreeItem((current) => !current)}
+            >
+              {redeemFreeItem ? 'Free item applied' : 'Use free item'}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Fake card form */}
       <Card className="border-border/60 bg-card/70 coffee-card">
@@ -385,7 +432,9 @@ export default function PaymentContent() {
             <Link
               href={`/customer/order?pickupName=${encodeURIComponent(
                 pickupName,
-              )}&notes=${encodeURIComponent(notes)}`}
+              )}&notes=${encodeURIComponent(notes)}&pickupTime=${encodeURIComponent(
+                pickupTime,
+              )}`}
               className="sm:order-1"
             >
               <Button variant="outline" className="w-full sm:w-auto">

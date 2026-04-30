@@ -65,6 +65,18 @@ function getStatusActions(status) {
   }
 }
 
+// shows late orders
+// shows late orders only after they are ready for collection
+function isLate(order) {
+  if (!order.pickupTime) return false;
+  if (order.status !== 'READY') return false;
+
+  const now = new Date();
+  const pickup = new Date(order.pickupTime);
+
+  return now > new Date(pickup.getTime() + 15 * 60 * 1000);
+}
+
 export default function StaffDashboardPage() {
   const router = useRouter();
   // Holds active staff orders returned by the backend
@@ -308,6 +320,25 @@ export default function StaffDashboardPage() {
                       Pickup name
                     </div>
                     <div className="font-medium">{order.pickupName || '-'}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-muted-foreground text-xs">
+                      Pickup time
+                    </div>
+                    <div className="font-medium">
+                      {order.pickupTime
+                        ? new Date(order.pickupTime).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '-'}
+                    </div>
+                    {isLate(order) ? (
+                      <div className="text-xs text-red-500">
+                        Customer is late (15+ mins after pickup time)
+                      </div>
+                    ) : null}
                   </div>
 
                   {order.notes ? (

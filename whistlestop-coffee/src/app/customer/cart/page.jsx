@@ -204,7 +204,7 @@ export default function CartPage() {
     <div className="mx-auto w-full max-w-2xl space-y-4">
       {/* Main cart card */}
       <Card className="border-border/60 bg-card/70 coffee-card">
-        {/* Cart header with optional clear button */}
+        {/* Cart header with clear button */}
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Cart</CardTitle>
 

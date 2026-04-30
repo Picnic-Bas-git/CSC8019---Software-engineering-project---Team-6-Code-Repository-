@@ -12,6 +12,7 @@ import { updateOrderStatusSchema } from '@/lib/validations/staff-order';
   PATCH:
   - updates the order status
   - can optionally archive the order
+  - awards loyalty when an order is collected
 */
 
 export async function GET(_req, { params }) {
@@ -112,7 +113,9 @@ export async function PATCH(req, { params }) {
             cancelledAt: new Date(),
           },
           include: {
-            user: { select: { id: true, name: true, email: true, phone: true } },
+            user: {
+              select: { id: true, name: true, email: true, phone: true },
+            },
             items: true,
           },
         });
@@ -122,7 +125,7 @@ export async function PATCH(req, { params }) {
 
       return NextResponse.json(
         { message: 'Order cancelled successfully', order: updatedOrder },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -139,20 +142,46 @@ export async function PATCH(req, { params }) {
       updateData.archivedAt = new Date();
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
-        items: true,
-      },
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const orderUpdate = await tx.order.update({
+        where: { id },
+        data: updateData,
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          items: true,
+        },
+      });
+
+      // Award loyalty only when the order becomes collected for the first time
+      if (status === 'COLLECTED' && existingOrder.status !== 'COLLECTED') {
+        await tx.loyaltyRecord.create({
+          data: {
+            userId: existingOrder.userId,
+            orderId: existingOrder.id,
+            type: 'EARN',
+            pointsChange: 0,
+            stampsChange: 1,
+            description: `Earned from collected order ${existingOrder.id}`,
+          },
+        });
+
+        await tx.user.update({
+          where: { id: existingOrder.userId },
+          data: {
+            loyaltyStamps: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
+      return orderUpdate;
     });
 
     return NextResponse.json(
       { message: 'Order status updated', order: updatedOrder },
-      { status: 200 }
+      { status: 200 },
     );
-
   } catch (error) {
     // Log the error for debugging
     console.error('STAFF ORDER PATCH ERROR:', error);
