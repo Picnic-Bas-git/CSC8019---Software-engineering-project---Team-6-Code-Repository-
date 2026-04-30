@@ -24,6 +24,7 @@ export default function AddToCartPanel({ item }) {
   const [success, setSuccess] = useState('');
 
   const [user, setUser] = useState(null);
+  const [addingId, setAddingId] = useState(null);
 
   useEffect(() => {
     async function loadUser() {
