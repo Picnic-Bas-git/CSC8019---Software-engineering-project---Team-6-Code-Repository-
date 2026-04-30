@@ -179,7 +179,7 @@ export default function AppShell({
             {/* Right side: cart button, account button, theme toggle */}
             <div className="flex items-center gap-2">
               {/* Cart shortcut shown only on customer-facing pages */}
-              {showCustomerTabs ? (
+              {showCustomerTabs && user?.role === 'CUSTOMER' ? (
                 <Link href="/customer/cart" className="relative">
                   <Button
                     variant="outline"
@@ -222,7 +222,7 @@ export default function AppShell({
       </div>
 
       {/* Mobile-only bottom tab navigation for customer pages */}
-      {showCustomerTabs ? (
+      {showCustomerTabs && user?.role === 'CUSTOMER' ? (
         <nav className="border-border/60 bg-background/80 fixed right-0 bottom-0 left-0 z-50 border-t backdrop-blur-md md:hidden">
           <div className="mx-auto flex max-w-5xl">
             <Tab
