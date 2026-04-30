@@ -96,6 +96,41 @@ export default function StatusContent() {
   // Determine which single order id to load first, if any
   const selectedOrderId = placedOrderId || orderId;
 
+  // allows person to order same item again
+  async function handleOrderAgain() {
+    if (!selectedOrder?.items?.length) return;
+
+    try {
+      setError('');
+
+      for (const item of selectedOrder.items) {
+        const res = await fetch('/api/cart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            menuItemId: item.menuItemId,
+            size: item.size,
+            quantity: item.quantity,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || 'Failed to add item back to cart');
+          return;
+        }
+      }
+
+      window.dispatchEvent(new Event('cart-updated'));
+      window.location.href = '/customer/cart';
+    } catch {
+      setError('Something went wrong while adding this order to your cart.');
+    }
+  }
+
   /**
    * Loads either:
    * - one specific order when an ID is provided
@@ -322,9 +357,9 @@ export default function StatusContent() {
                   </Button>
                 </Link>
 
-                <Link href="/customer/menu" className="sm:flex-1">
-                  <Button className="w-full">Order again</Button>
-                </Link>
+                <Button className="w-full sm:flex-1" onClick={handleOrderAgain}>
+                  Order again
+                </Button>
               </div>
             </div>
           ) : null}

@@ -13,11 +13,15 @@ import { processHorsePayPayment } from '@/lib/horsepay';
   POST:
   - creates a new order from the user's current cart
   - calculates totals on the backend
+  - applies a free item discount if the customer redeems loyalty
   - processes HorsePay payment
   - stores order items
   - stores payment record
+  - stores loyalty redemption if used
   - clears the user's cart
-  - updates loyalty points and stamps
+
+  Loyalty earning is not handled here.
+  A customer earns loyalty only when staff marks the order as collected.
 */
 
 export async function GET() {
@@ -68,7 +72,13 @@ export async function POST(req) {
       );
     }
 
-    const { pickupName, notes } = parsed.data;
+    const { pickupName, notes, pickupTime, redeemFreeItem } = parsed.data;
+
+    // Format pickup time from HH:MM into a Date for today's date
+    const [hours, minutes] = pickupTime.split(':').map(Number);
+
+    const pickupDateTime = new Date();
+    pickupDateTime.setHours(hours, minutes, 0, 0);
 
     // Load the current cart including menu item pricing
     const cartItems = await prisma.cartItem.findMany({
@@ -118,6 +128,34 @@ export async function POST(req) {
       };
     });
 
+    // Apply free item loyalty discount if the customer has enough collected orders
+    let discountAmount = 0;
+
+    if (redeemFreeItem) {
+      const freshUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { loyaltyStamps: true },
+      });
+
+      if ((freshUser?.loyaltyStamps ?? 0) < 9) {
+        return NextResponse.json(
+          {
+            error:
+              'You do not have enough collected orders to claim a free item.',
+          },
+          { status: 400 },
+        );
+      }
+
+      // Make the cheapest single item free
+      const cheapestItem = orderItemsData.reduce((cheapest, item) =>
+        item.priceAtTime < cheapest.priceAtTime ? item : cheapest,
+      );
+
+      discountAmount = cheapestItem.priceAtTime;
+      totalAmount = Math.max(0, totalAmount - discountAmount);
+    }
+
     // Step 1: process payment before creating the order
     const paymentResponse = await processHorsePayPayment({
       customerId: user.id,
@@ -142,90 +180,87 @@ export async function POST(req) {
       );
     }
 
-    // Basic loyalty logic:
-    // 1 stamp per order, 1 point per whole pound spent
-    const loyaltyPointsEarned = Math.floor(totalAmount);
-    const loyaltyStampsEarned = 1;
-
-    const order = await prisma.$transaction(async (tx) => {
-      // Create the main order
-      const newOrder = await tx.order.create({
-        data: {
-          userId: user.id,
-          totalAmount,
-          status: 'PENDING',
-          pickupName: pickupName.trim(),
-          notes: notes?.trim() || null,
-          items: {
-            create: orderItemsData,
+    const order = await prisma.$transaction(
+      async (tx) => {
+        // Create the main order
+        const newOrder = await tx.order.create({
+          data: {
+            userId: user.id,
+            totalAmount,
+            status: 'PENDING',
+            pickupName: pickupName.trim(),
+            pickupTime: pickupDateTime,
+            notes: notes?.trim() || null,
+            items: {
+              create: orderItemsData,
+            },
           },
-        },
-        include: {
-          items: true,
-        },
-      });
-
-      // Store successful payment record
-      await tx.paymentRecord.create({
-        data: {
-          orderId: newOrder.id,
-          provider: 'HORSEPAY',
-          amount: totalAmount,
-          currency: 'GBP',
-          status: 'PAID',
-          transactionRef: `${newOrder.id}-${Date.now()}`,
-          paidAt: new Date(),
-        },
-      });
-
-      // Record loyalty changes
-      await tx.loyaltyRecord.create({
-        data: {
-          userId: user.id,
-          orderId: newOrder.id,
-          type: 'EARN',
-          pointsChange: loyaltyPointsEarned,
-          stampsChange: loyaltyStampsEarned,
-          description: `Earned from order ${newOrder.id}`,
-        },
-      });
-
-      // Update user loyalty totals
-      await tx.user.update({
-        where: { id: user.id },
-        data: {
-          loyaltyPoints: {
-            increment: loyaltyPointsEarned,
+          include: {
+            items: true,
           },
-          loyaltyStamps: {
-            increment: loyaltyStampsEarned,
+        });
+
+        // Store successful payment record
+        await tx.paymentRecord.create({
+          data: {
+            orderId: newOrder.id,
+            provider: 'HORSEPAY',
+            amount: totalAmount,
+            currency: 'GBP',
+            status: 'PAID',
+            transactionRef: `${newOrder.id}-${Date.now()}`,
+            paidAt: new Date(),
           },
-        },
-      });
+        });
 
-      // Clear the user's cart after successful order creation
-      await tx.cartItem.deleteMany({
-        where: {
-          userId: user.id,
-        },
-      });
+        // If a free item was redeemed, remove 9 collected-order stamps
+        if (redeemFreeItem && discountAmount > 0) {
+          await tx.loyaltyRecord.create({
+            data: {
+              userId: user.id,
+              orderId: newOrder.id,
+              type: 'REDEEM',
+              pointsChange: 0,
+              stampsChange: -9,
+              description: `Redeemed free item on order ${newOrder.id}`,
+            },
+          });
 
-      return newOrder;
-    }, {
-      // Aiven MySQL is remote, so 5 sequential writes can exceed Prisma's
-      // default 5s interactive transaction timeout and surface as P2028.
-      maxWait: 10000,
-      timeout: 20000,
-    });
+          await tx.user.update({
+            where: { id: user.id },
+            data: {
+              loyaltyStamps: {
+                decrement: 9,
+              },
+            },
+          });
+        }
+
+        // Clear the user's cart after successful order creation
+        await tx.cartItem.deleteMany({
+          where: {
+            userId: user.id,
+          },
+        });
+
+        return newOrder;
+      },
+      {
+        // Aiven MySQL is remote, so the sequential writes can exceed Prisma's
+        // default 5s interactive transaction timeout and surface as P2028.
+        maxWait: 10000,
+        timeout: 20000,
+      },
+    );
 
     return NextResponse.json(
       {
         message: 'Payment successful and order placed',
         order,
         payment: paymentResponse,
-        loyalty: {
-          pointsEarned: loyaltyPointsEarned,
-          stampsEarned: loyaltyStampsEarned,
+        discount: {
+          freeItemRedeemed: Boolean(redeemFreeItem && discountAmount > 0),
+          discountAmount,
         },
       },
       { status: 201 },

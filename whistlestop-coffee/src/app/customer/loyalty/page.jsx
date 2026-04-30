@@ -10,8 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
   This page lets the signed-in customer view their loyalty progress.
 
   It shows:
-  - current loyalty points
-  - current loyalty stamps
+  - current loyalty orders
   - loyalty history from previous orders or adjustments
 */
 
@@ -103,24 +102,29 @@ export default function LoyaltyPage() {
 
           {/* Loyalty totals */}
           {!isLoading && loyalty ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3">
               <div className="border-border/60 bg-background/40 rounded-xl border p-4">
                 <div className="text-muted-foreground text-xs">
-                  Loyalty points
+                  Collected orders
                 </div>
                 <div className="text-2xl font-semibold">
-                  {loyalty.points ?? 0}
+                  {loyalty.stamps ?? 0}/9
+                </div>
+                <div className="text-muted-foreground mt-1 text-xs">
+                  Collect 9 orders to claim a free item on your 10th order.
                 </div>
               </div>
-
-              <div className="border-border/60 bg-background/40 rounded-xl border p-4">
-                <div className="text-muted-foreground text-xs">
-                  Loyalty stamps
+              {loyalty.stamps >= 9 ? (
+                <div className="text-sm font-medium text-green-600">
+                  You have earned a free item for your next order.
                 </div>
-                <div className="text-2xl font-semibold">
-                  {loyalty.stamps ?? 0}
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  {9 - (loyalty.stamps ?? 0)} more collected order
+                  {9 - (loyalty.stamps ?? 0) === 1 ? '' : 's'} until your free
+                  item.
                 </div>
-              </div>
+              )}
             </div>
           ) : null}
         </CardContent>
@@ -164,11 +168,7 @@ export default function LoyaltyPage() {
 
                   <div className="text-sm font-medium">
                     <div>
-                      Points: {record.pointsChange >= 0 ? '+' : ''}
-                      {record.pointsChange}
-                    </div>
-                    <div>
-                      Stamps: {record.stampsChange >= 0 ? '+' : ''}
+                      Orders: {record.stampsChange >= 0 ? '+' : ''}
                       {record.stampsChange}
                     </div>
                   </div>

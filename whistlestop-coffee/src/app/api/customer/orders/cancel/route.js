@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireUser } from '@/lib/session'; // 修改了这里：requireSession -> requireUser
+import { requireUser } from '@/lib/session'; // requireSession -> requireUser
 
 const STATUS = {
   PENDING: 'PENDING',
@@ -13,7 +13,7 @@ const STATUS = {
 
 export async function PATCH(req) {
   try {
-    // 修改了这里：使用 requireUser()
+    // requireUser()
     const user = await requireUser();
     const userId = user.id;
 
@@ -26,7 +26,10 @@ export async function PATCH(req) {
 
     const { orderId } = body;
     if (!orderId) {
-      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Order ID is required' },
+        { status: 400 },
+      );
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -38,13 +41,18 @@ export async function PATCH(req) {
           status: true,
           //loyaltyPointsUsed: true,
           //loyaltyPointsEarned: true,
-        }
+        },
       });
 
       if (!order) throw new Error('ORDER_NOT_FOUND');
       if (order.userId !== userId) throw new Error('FORBIDDEN');
 
-      const nonCancellable = [STATUS.PREPARING, STATUS.READY, STATUS.PICKED_UP, STATUS.CANCELLED];
+      const nonCancellable = [
+        STATUS.PREPARING,
+        STATUS.READY,
+        STATUS.PICKED_UP,
+        STATUS.CANCELLED,
+      ];
       if (nonCancellable.includes(order.status)) {
         throw new Error(`CANNOT_CANCEL_${order.status}`);
       }
@@ -52,7 +60,7 @@ export async function PATCH(req) {
       const updatedOrder = await tx.order.update({
         where: { id: orderId },
         data: { status: STATUS.CANCELLED },
-        select: { id: true, status: true }
+        select: { id: true, status: true },
       });
 
       //const pointsAdjustment = (order.loyaltyPointsUsed || 0) - (order.loyaltyPointsEarned || 0);
@@ -81,20 +89,28 @@ export async function PATCH(req) {
 
     return NextResponse.json({
       message: 'Order successfully cancelled',
-      order: result
+      order: result,
     });
-
   } catch (error) {
     console.error('CANCEL ORDER ERROR:', error.stack || error);
 
-    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    if (error.message === 'ORDER_NOT_FOUND') return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (error.message === 'Unauthorized')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (error.message === 'FORBIDDEN')
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    if (error.message === 'ORDER_NOT_FOUND')
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     if (error.message.startsWith('CANNOT_CANCEL')) {
       const status = error.message.split('_').pop();
-      return NextResponse.json({ error: `Cannot cancel order in ${status} status` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Cannot cancel order in ${status} status` },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
