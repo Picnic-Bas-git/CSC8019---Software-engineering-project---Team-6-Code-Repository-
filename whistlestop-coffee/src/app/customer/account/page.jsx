@@ -118,7 +118,9 @@ export default function AccountPage() {
                 <div className="text-muted-foreground text-xs">
                   Orders Until Next Discount
                 </div>
-                <div className="font-medium">{9 - user.loyaltyStamps ?? 9}</div>
+                <div className="font-medium">
+                  {9 - ((user?.loyaltyStamps ?? 0) % 10)}
+                </div>
               </div>
 
               {/* Quick actions for signed-in customers */}
