@@ -133,7 +133,7 @@ export default function AppShell({
   // Determine where the account button should go
   const accountHref =
     user?.role === 'STAFF' || user?.role === 'ADMIN'
-      ? '/staff/dashboard'
+      ? '/staff/account'
       : user?.role === 'CUSTOMER'
         ? '/customer/account'
         : '/auth/login';

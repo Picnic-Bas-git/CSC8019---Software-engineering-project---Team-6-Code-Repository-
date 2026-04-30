@@ -71,6 +71,9 @@ export default function MenuPage() {
   // Stores a short success message for quick add feedback
   const [success, setSuccess] = useState('');
 
+  // Holds the current logged-in user so staff cannot place orders
+  const [user, setUser] = useState(null);
+
   /**
    * Loads menu items from the backend when the page first renders.
    * The backend response is mapped into the shape the current UI expects.
@@ -80,6 +83,20 @@ export default function MenuPage() {
       try {
         setError('');
 
+        // 1. Load user
+        const userRes = await fetch('/api/auth/me', {
+          cache: 'no-store',
+        });
+
+        const userData = await userRes.json();
+
+        if (userRes.ok) {
+          setUser(userData.user);
+        } else {
+          setUser(null);
+        }
+
+        // 2. Load menu
         const res = await fetch('/api/menu');
         const data = await res.json();
 
@@ -88,8 +105,7 @@ export default function MenuPage() {
           return;
         }
 
-        // Convert backend menu item shape into the structure
-        // this page already uses, so the rest of the UI can stay simple
+        // 3. Map items
         const mappedItems = (data.items || []).map((item) => ({
           id: item.id,
           slug: item.slug,
@@ -170,6 +186,9 @@ export default function MenuPage() {
     );
   }
 
+  // Check if the logged-in user is allowed to add items to cart
+  const isCustomer = user?.role === 'CUSTOMER';
+
   return (
     <div className="space-y-3">
       {/* Shows page-level feedback for quick add actions */}
@@ -215,14 +234,20 @@ export default function MenuPage() {
 
               {/* Quick add button
                  Adds one regular-size item to the real backend cart. */}
-              <Button
-                variant="outline"
-                className="w-full"
-                disabled={addingId === item.id}
-                onClick={() => handleQuickAdd(item)}
-              >
-                {addingId === item.id ? 'Adding...' : 'Add to cart'}
-              </Button>
+              {isCustomer ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={addingId === item.id}
+                  onClick={() => handleQuickAdd(item)}
+                >
+                  {addingId === item.id ? 'Adding...' : 'Add to cart'}
+                </Button>
+              ) : (
+                <div className="border-border/60 text-muted-foreground rounded-xl border py-2 text-center text-sm">
+                  Staff view only
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

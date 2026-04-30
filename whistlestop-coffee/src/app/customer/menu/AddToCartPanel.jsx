@@ -4,7 +4,7 @@
 
 // React hooks for memoizing derived values, managing local component state,
 // and handling backend cart actions
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // Reusable button component
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,30 @@ export default function AddToCartPanel({ item }) {
 
   // Stores a short success message after adding to cart
   const [success, setSuccess] = useState('');
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          cache: 'no-store',
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          setUser(data.user);
+        }
+      } catch {
+        setUser(null);
+      }
+    }
+
+    loadUser();
+  }, []);
+
+  const isCustomer = user?.role === 'CUSTOMER';
 
   /**
    * Build the available size options for this item.
@@ -105,6 +129,7 @@ export default function AddToCartPanel({ item }) {
             <Button
               key={o.key}
               type="button"
+              disabled={!isCustomer || isLoading}
               variant={size === o.key ? 'default' : 'outline'}
               className="flex-1"
               onClick={() => setSize(o.key)}
@@ -124,7 +149,7 @@ export default function AddToCartPanel({ item }) {
             type="button"
             variant="outline"
             size="sm"
-            disabled={isLoading}
+            disabled={!isCustomer || isLoading}
             onClick={() => setQty((q) => Math.max(1, q - 1))}
           >
             -
@@ -138,7 +163,7 @@ export default function AddToCartPanel({ item }) {
             type="button"
             variant="outline"
             size="sm"
-            disabled={isLoading}
+            disabled={!isCustomer || isLoading}
             onClick={() => setQty((q) => q + 1)}
           >
             +
@@ -153,14 +178,20 @@ export default function AddToCartPanel({ item }) {
       {success ? <div className="text-sm text-green-600">{success}</div> : null}
 
       {/* Add selected item(s) to cart and show total price */}
-      <Button
-        type="button"
-        className="w-full"
-        disabled={isLoading}
-        onClick={addToCart}
-      >
-        {isLoading ? 'Adding...' : `Add to cart · £${total.toFixed(2)}`}
-      </Button>
+      {isCustomer ? (
+        <Button
+          type="button"
+          className="w-full"
+          disabled={isLoading}
+          onClick={addToCart}
+        >
+          {isLoading ? 'Adding...' : `Add to cart · £${total.toFixed(2)}`}
+        </Button>
+      ) : (
+        <div className="border-border/60 text-muted-foreground rounded-xl border py-2 text-center text-sm">
+          Staff view only. Ordering is disabled.
+        </div>
+      )}
     </div>
   );
 }
