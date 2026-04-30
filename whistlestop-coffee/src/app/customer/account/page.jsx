@@ -107,19 +107,18 @@ export default function AccountPage() {
                 <div className="font-medium">{user.role || '-'}</div>
               </div>
 
-              {/* Displays loyalty information for signed-in users */}
-              <div>
+              <div title="Place 9 orders and receive your 10th item free.">
                 <div className="text-muted-foreground text-xs">
-                  Loyalty points
+                  Orders Placed So Far
                 </div>
-                <div className="font-medium">{user.loyaltyPoints ?? 0}</div>
+                <div className="font-medium">{user.loyaltyStamps ?? 0}</div>
               </div>
 
               <div>
                 <div className="text-muted-foreground text-xs">
-                  Loyalty stamps
+                  Orders Until Next Discount
                 </div>
-                <div className="font-medium">{user.loyaltyStamps ?? 0}</div>
+                <div className="font-medium">{9 - user.loyaltyStamps ?? 9}</div>
               </div>
 
               {/* Quick actions for signed-in customers */}

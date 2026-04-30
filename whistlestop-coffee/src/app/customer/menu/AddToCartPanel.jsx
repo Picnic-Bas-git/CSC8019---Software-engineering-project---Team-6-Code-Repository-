@@ -45,6 +45,7 @@ export default function AddToCartPanel({ item }) {
   }, []);
 
   const isCustomer = user?.role === 'CUSTOMER';
+  const isStaff = user?.role === 'STAFF' || user?.role === 'ADMIN';
 
   /**
    * Build the available size options for this item.
@@ -180,17 +181,23 @@ export default function AddToCartPanel({ item }) {
       {/* Add selected item(s) to cart and show total price */}
       {isCustomer ? (
         <Button
-          type="button"
+          variant="outline"
           className="w-full"
-          disabled={isLoading}
-          onClick={addToCart}
+          disabled={addingId === item.id}
+          onClick={() => handleQuickAdd(item)}
         >
-          {isLoading ? 'Adding...' : `Add to cart · £${total.toFixed(2)}`}
+          {addingId === item.id ? 'Adding...' : 'Add to cart'}
         </Button>
-      ) : (
+      ) : isStaff ? (
         <div className="border-border/60 text-muted-foreground rounded-xl border py-2 text-center text-sm">
-          Staff view only. Ordering is disabled.
+          Staff view only
         </div>
+      ) : (
+        <Link href="/auth/login">
+          <Button variant="outline" className="w-full">
+            Sign in to order
+          </Button>
+        </Link>
       )}
     </div>
   );

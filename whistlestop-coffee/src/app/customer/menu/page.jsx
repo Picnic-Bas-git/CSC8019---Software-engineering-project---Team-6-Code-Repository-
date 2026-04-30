@@ -188,6 +188,7 @@ export default function MenuPage() {
 
   // Check if the logged-in user is allowed to add items to cart
   const isCustomer = user?.role === 'CUSTOMER';
+  const isStaff = user?.role === 'STAFF' || user?.role === 'ADMIN';
 
   return (
     <div className="space-y-3">
@@ -243,10 +244,16 @@ export default function MenuPage() {
                 >
                   {addingId === item.id ? 'Adding...' : 'Add to cart'}
                 </Button>
-              ) : (
+              ) : isStaff ? (
                 <div className="border-border/60 text-muted-foreground rounded-xl border py-2 text-center text-sm">
                   Staff view only
                 </div>
+              ) : (
+                <Link href="/auth/login">
+                  <Button variant="outline" className="w-full">
+                    Sign in to order
+                  </Button>
+                </Link>
               )}
             </CardContent>
           </Card>
