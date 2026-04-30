@@ -5,6 +5,7 @@
 // React hooks for memoizing derived values, managing local component state,
 // and handling backend cart actions
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 
 // Reusable button component
 import { Button } from '@/components/ui/button';
