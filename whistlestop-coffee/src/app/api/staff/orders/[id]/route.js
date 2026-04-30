@@ -102,53 +102,57 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Start building the update payload with the new order status
-    const updateData = {
-      status,
-    };
+    // Handle cancellation via transaction
+    if (status === 'CANCELLED') {
+      const updatedOrder = await prisma.$transaction(async (tx) => {
+        const orderUpdate = await tx.order.update({
+          where: { id },
+          data: {
+            status: 'CANCELLED',
+            cancelledAt: new Date(),
+          },
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true } },
+            items: true,
+          },
+        });
 
-    // Archive or unarchive the order if explicitly requested
+        return orderUpdate;
+      });
+
+      return NextResponse.json(
+        { message: 'Order cancelled successfully', order: updatedOrder },
+        { status: 200 }
+      );
+    }
+
+    // Handle normal status transitions (PREPARING, READY, etc.)
+    const updateData = { status };
+
     if (isArchived !== undefined) {
       updateData.isArchived = isArchived;
       updateData.archivedAt = isArchived ? new Date() : null;
     }
 
-    // Automatically archive orders once they are collected
     if (status === 'COLLECTED') {
       updateData.isArchived = true;
       updateData.archivedAt = new Date();
     }
 
-    // Record when the order was cancelled
-    if (status === 'CANCELLED' && !existingOrder.cancelledAt) {
-      updateData.cancelledAt = new Date();
-    }
-
-    // Update the order and return the latest user and item details
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: updateData,
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-          },
-        },
+        user: { select: { id: true, name: true, email: true, phone: true } },
         items: true,
       },
     });
 
-    // Return the updated order as JSON
     return NextResponse.json(
-      {
-        message: 'Order updated successfully',
-        order: updatedOrder,
-      },
-      { status: 200 },
+      { message: 'Order status updated', order: updatedOrder },
+      { status: 200 }
     );
+
   } catch (error) {
     // Log the error for debugging
     console.error('STAFF ORDER PATCH ERROR:', error);
