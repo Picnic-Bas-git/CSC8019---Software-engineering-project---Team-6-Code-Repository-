@@ -4,6 +4,9 @@
 // and handling quick add state
 import { useEffect, useState } from 'react';
 
+// Imports useRouter
+import { useRouter } from 'next/navigation';
+
 // Reusable UI components
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,29 +36,54 @@ function PriceLine({ prices }) {
 }
 
 /**
- * Shows small visual size badges on the menu card.
- * R = Regular
- * L = Large
+ * Shows clickable size buttons on the menu image.
+ * Selecting R or L updates the quick-add size for that item.
  */
-function SizePills({ hasLarge }) {
+function SizePills({ hasLarge, selectedSize, onSelectSize }) {
   return (
     <div className="absolute top-3 right-3 flex flex-col gap-2">
-      {/* Regular size badge */}
-      <div className="border-border/60 bg-background/70 h-8 w-8 rounded-full border text-center text-xs leading-8 backdrop-blur">
+      <button
+        type="button"
+        className={`border-border/60 h-8 w-8 rounded-full border text-center text-xs leading-8 backdrop-blur ${
+          selectedSize === 'REGULAR'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-background/70'
+        }`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onSelectSize('REGULAR');
+        }}
+      >
         R
-      </div>
+      </button>
 
-      {/* Large size badge, shown only when available */}
       {hasLarge ? (
-        <div className="border-border/60 bg-background/70 h-8 w-8 rounded-full border text-center text-xs leading-8 backdrop-blur">
+        <button
+          type="button"
+          className={`border-border/60 h-8 w-8 rounded-full border text-center text-xs leading-8 backdrop-blur ${
+            selectedSize === 'LARGE'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background/70'
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSelectSize('LARGE');
+          }}
+        >
           L
-        </div>
+        </button>
       ) : null}
     </div>
   );
 }
 
 export default function MenuPage() {
+  // Allows the page to send users to the full item detail page
+  // when they click "Choose a size" without selecting R or L first.
+  const router = useRouter();
+
   // Holds menu items returned from the backend
   const [items, setItems] = useState([]);
 
@@ -73,6 +101,10 @@ export default function MenuPage() {
 
   // Holds the current logged-in user so staff cannot place orders
   const [user, setUser] = useState(null);
+
+  // Implemented after trade fair; fixes the size selection issue.
+  // Stores the selected size for each menu item.
+  const [selectedSizes, setSelectedSizes] = useState({});
 
   /**
    * Loads menu items from the backend when the page first renders.
@@ -130,15 +162,31 @@ export default function MenuPage() {
   }, []);
 
   /**
-   * Quick add action for the menu card.
-   * Adds one regular-size item to the backend cart.
+   * Adds the selected item size to the cart.
+   *
+   * If no size has been selected, the user is sent to the full item detail page,
+   * where they can review the drink and choose a size.
    */
   async function handleQuickAdd(item) {
+    // Get the selected size for this specific item card.
+    const selectedSize = selectedSizes[item.id];
+
+    // If the customer has not selected R or L yet,
+    // treat the button as "Choose a size" and send them to the item page.
+    if (!selectedSize) {
+      router.push(`/customer/menu/${item.slug}`);
+      return;
+    }
+
     try {
+      // Track which item is being added so only that button shows loading.
       setAddingId(item.id);
+
+      // Clear old feedback before a new cart request.
       setError('');
       setSuccess('');
 
+      // Send the selected size to the backend cart API.
       const res = await fetch('/api/cart', {
         method: 'POST',
         headers: {
@@ -146,23 +194,28 @@ export default function MenuPage() {
         },
         body: JSON.stringify({
           menuItemId: item.id,
-          size: 'REGULAR',
+          size: selectedSize,
           quantity: 1,
         }),
       });
 
       const data = await res.json();
 
+      // Show the backend error if the cart request fails.
       if (!res.ok) {
         setError(data.error || 'Failed to add item to cart');
         return;
       }
 
+      // Show a short success message after the item is added.
       setSuccess(`${item.name} added to cart`);
+
+      // Notify any cart badge/header component to refresh its count.
       window.dispatchEvent(new Event('cart-updated'));
     } catch {
       setError('Something went wrong while adding to cart.');
     } finally {
+      // Reset loading state after the request finishes.
       setAddingId(null);
     }
   }
@@ -222,7 +275,16 @@ export default function MenuPage() {
                     : 'Single size'}
                 </div>
 
-                <SizePills hasLarge={item.prices.large != null} />
+                <SizePills
+                  hasLarge={item.prices.large != null}
+                  selectedSize={selectedSizes[item.id]}
+                  onSelectSize={(size) =>
+                    setSelectedSizes((prev) => ({
+                      ...prev,
+                      [item.id]: size,
+                    }))
+                  }
+                />
               </div>
             </Link>
 
@@ -233,17 +295,26 @@ export default function MenuPage() {
                 <PriceLine prices={item.prices} />
               </div>
 
-              {/* Quick add button
-                 Adds one regular-size item to the real backend cart. */}
+              {/* Size selection for quick add.
+              The customer must choose R or L before the card button becomes "Add to cart". */}
               {isCustomer ? (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled={addingId === item.id}
-                  onClick={() => handleQuickAdd(item)}
-                >
-                  {addingId === item.id ? 'Adding...' : 'Add to cart'}
-                </Button>
+                <div className="space-y-2">
+                  {/* Quick add button.
+                  If no size is selected, it acts as a "Choose a size" button.
+                  If R or L is selected, it adds that selected size to the cart. */}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={addingId === item.id}
+                    onClick={() => handleQuickAdd(item)}
+                  >
+                    {addingId === item.id
+                      ? 'Adding...'
+                      : selectedSizes[item.id]
+                        ? 'Add to cart'
+                        : 'Choose a size'}
+                  </Button>
+                </div>
               ) : isStaff ? (
                 <div className="border-border/60 text-muted-foreground rounded-xl border py-2 text-center text-sm">
                   Staff view only
