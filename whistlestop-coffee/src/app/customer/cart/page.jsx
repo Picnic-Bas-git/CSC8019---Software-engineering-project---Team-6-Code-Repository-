@@ -243,15 +243,11 @@ export default function CartPage() {
 
         <CardContent className="space-y-3">
           {/* Kiosk open/closed status */}
-          <div
-            className={`rounded-xl border p-3 text-sm font-medium ${
-              kioskStatus.isOpen
-                ? 'border-green-500/20 bg-green-500/10 text-green-700'
-                : 'border-red-500/20 bg-red-500/10 text-red-700'
-            }`}
-          >
-            {kioskStatus.message}
-          </div>
+          {!kioskStatus.isOpen ? (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-medium text-red-700">
+              {kioskStatus.message}
+            </div>
+          ) : null}
           {/* Loading state while cart data is being fetched */}
           {isLoading ? (
             <div className="text-muted-foreground text-sm">Loading cart...</div>

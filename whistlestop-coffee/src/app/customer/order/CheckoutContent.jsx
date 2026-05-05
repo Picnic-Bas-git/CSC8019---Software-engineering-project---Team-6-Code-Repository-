@@ -13,6 +13,62 @@ function money(n) {
   return `£${n.toFixed(2)}`;
 }
 
+/**
+ * Converts a "HH:mm" time string into total minutes.
+ * Example: "06:30" becomes 390.
+ */
+function timeToMinutes(time) {
+  const [hours, minutes] = time.split(':').map(Number);
+
+  return hours * 60 + minutes;
+}
+
+/**
+ * Converts total minutes back into "HH:mm" format.
+ * Example: 410 becomes "06:50".
+ */
+function minutesToTime(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+/**
+ * Calculates the earliest valid pickup time.
+ * Customers should not be able to select a past time or a time too close
+ * to the current order time. Staff need at least 20 minutes to prepare orders.
+ */
+function getEarliestPickupTime(openTime) {
+  const now = new Date();
+
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const bufferMinutes = currentMinutes + 20;
+
+  if (!openTime) {
+    return minutesToTime(bufferMinutes);
+  }
+
+  const openMinutes = timeToMinutes(openTime);
+
+  return minutesToTime(Math.max(bufferMinutes, openMinutes));
+}
+
+/**
+ * Checks whether the selected pickup time is valid for today.
+ */
+function isPickupTimeValid(pickupTime, kioskStatus) {
+  if (!pickupTime || !kioskStatus.isOpen) return false;
+
+  const selectedMinutes = timeToMinutes(pickupTime);
+  const earliestMinutes = timeToMinutes(
+    getEarliestPickupTime(kioskStatus.openTime),
+  );
+  const closeMinutes = timeToMinutes(kioskStatus.closeTime);
+
+  return selectedMinutes >= earliestMinutes && selectedMinutes <= closeMinutes;
+}
+
 export default function CheckoutContent() {
   const router = useRouter();
 
@@ -53,6 +109,13 @@ export default function CheckoutContent() {
     openTime: '',
     closeTime: '',
   });
+
+  // Earliest pickup time allowed today.
+  // This respects opening time and the 20-minute preparation buffer.
+  const earliestPickupTime = getEarliestPickupTime(kioskStatus.openTime);
+
+  // Checks whether the selected pickup time is valid before payment.
+  const pickupTimeIsValid = isPickupTimeValid(pickupTime, kioskStatus);
 
   /**
    * Loads the current user and current cart from the backend.
@@ -115,13 +178,22 @@ export default function CheckoutContent() {
   );
 
   /**
-   * Continue to payment
+   * Continues to the payment page after validating pickup details.
    */
   function handleContinueToPayment() {
-    // Prevent proceeding if kiosk is closed
-    if (!kioskStatus.isOpen) return;
+    if (!kioskStatus.isOpen) {
+      setError(kioskStatus.message || 'The kiosk is currently closed.');
+      return;
+    }
 
     if (!items.length || !pickupName.trim() || !pickupTime) return;
+
+    if (!pickupTimeIsValid) {
+      setError(
+        `Please choose a pickup time between ${earliestPickupTime} and ${kioskStatus.closeTime}. Staff need at least 20 minutes to prepare your order.`,
+      );
+      return;
+    }
 
     const params = new URLSearchParams({
       pickupName: pickupName.trim(),
@@ -202,15 +274,11 @@ export default function CheckoutContent() {
       </Card>
 
       {/* Kiosk open/closed status */}
-      <div
-        className={`rounded-xl border p-3 text-sm font-medium ${
-          kioskStatus.isOpen
-            ? 'border-green-500/20 bg-green-500/10 text-green-700'
-            : 'border-red-500/20 bg-red-500/10 text-red-700'
-        }`}
-      >
-        {kioskStatus.message}
-      </div>
+      {!kioskStatus.isOpen ? (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-medium text-red-700">
+          {kioskStatus.message}
+        </div>
+      ) : null}
 
       {/* Pickup details */}
       <Card className="border-border/60 bg-card/70 coffee-card">
@@ -239,10 +307,26 @@ export default function CheckoutContent() {
               type="time"
               required
               value={pickupTime}
-              min={kioskStatus.openTime || '00:00'}
+              min={earliestPickupTime}
               max={kioskStatus.closeTime || '23:59'}
-              onChange={(e) => setPickupTime(e.target.value)}
+              onChange={(e) => {
+                setPickupTime(e.target.value);
+                setError('');
+              }}
             />
+
+            {/*realized after trade fair that staff need time to prepare an order*/}
+            <div className="text-muted-foreground text-xs">
+              Earliest pickup today is {earliestPickupTime}. Staff need at least
+              20 minutes to prepare orders.
+            </div>
+
+            {pickupTime && !pickupTimeIsValid ? (
+              <div className="text-xs text-red-500">
+                Please choose a pickup time between {earliestPickupTime} and{' '}
+                {kioskStatus.closeTime}.
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -267,7 +351,10 @@ export default function CheckoutContent() {
               className="sm:order-2"
               onClick={handleContinueToPayment}
               disabled={
-                !pickupName.trim() || !pickupTime || !kioskStatus.isOpen
+                !pickupName.trim() ||
+                !pickupTime ||
+                !kioskStatus.isOpen ||
+                !pickupTimeIsValid
               }
             >
               {!kioskStatus.isOpen

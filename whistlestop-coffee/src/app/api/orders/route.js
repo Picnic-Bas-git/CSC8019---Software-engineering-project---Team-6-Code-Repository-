@@ -25,6 +25,30 @@ import { getKioskOpenStatus } from '@/lib/business-hours';
   A customer earns loyalty only when staff marks the order as collected.
 */
 
+//Helper functions to validate time
+function timeToMinutes(time) {
+  const [hours, minutes] = time.split(':').map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function getEarliestPickupTime(openTime) {
+  const now = new Date();
+
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const bufferMinutes = currentMinutes + 20;
+  const openMinutes = timeToMinutes(openTime);
+
+  return minutesToTime(Math.max(bufferMinutes, openMinutes));
+}
+
 export async function GET() {
   try {
     const user = await requireUser();
@@ -86,6 +110,27 @@ export async function POST(req) {
     }
 
     const { pickupName, notes, pickupTime, redeemFreeItem } = parsed.data;
+
+    // Validate pickup time against opening hours and preparation buffer.
+    const selectedPickupMinutes = timeToMinutes(pickupTime);
+    const earliestPickupMinutes = timeToMinutes(
+      getEarliestPickupTime(openStatus.openTime),
+    );
+    const closeMinutes = timeToMinutes(openStatus.closeTime);
+
+    if (
+      selectedPickupMinutes < earliestPickupMinutes ||
+      selectedPickupMinutes > closeMinutes
+    ) {
+      return NextResponse.json(
+        {
+          error: `Please choose a pickup time between ${minutesToTime(
+            earliestPickupMinutes,
+          )} and ${openStatus.closeTime}. Staff need at least 20 minutes to prepare your order.`,
+        },
+        { status: 400 },
+      );
+    }
 
     // Format pickup time from HH:MM into a Date for today's date
     const [hours, minutes] = pickupTime.split(':').map(Number);

@@ -274,7 +274,9 @@ export default function MenuPage() {
             : 'border-red-500/20 bg-red-500/10 text-red-700'
         }`}
       >
-        {kioskStatus.message}
+        {kioskStatus.isOpen
+          ? `The kiosk is open. Opening hours today are ${kioskStatus.openTime} to ${kioskStatus.closeTime}.`
+          : kioskStatus.message}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
