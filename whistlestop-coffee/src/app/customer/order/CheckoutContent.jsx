@@ -46,27 +46,35 @@ export default function CheckoutContent() {
   // Stores any loading or submit error
   const [error, setError] = useState('');
 
+  // Stores whether the kiosk is currently open and today's hours
+  const [kioskStatus, setKioskStatus] = useState({
+    isOpen: true,
+    message: '',
+    openTime: '',
+    closeTime: '',
+  });
+
   /**
    * Loads the current user and current cart from the backend.
-   * This replaces the old local session and local cart logic.
    */
   useEffect(() => {
     async function loadCheckoutData() {
       try {
         setError('');
 
-        const [userRes, cartRes] = await Promise.all([
+        const [userRes, cartRes, hoursRes] = await Promise.all([
           fetch('/api/auth/me', { cache: 'no-store' }),
           fetch('/api/cart', { cache: 'no-store' }),
+          fetch('/api/hours', { cache: 'no-store' }),
         ]);
 
         const userData = await userRes.json();
         const cartData = await cartRes.json();
+        const hoursData = await hoursRes.json();
 
         if (userRes.ok) {
           setUser(userData.user);
 
-          // Prefill pickup name from the current user if available
           const prefill =
             userData.user?.name || userData.user?.email?.split('@')[0] || '';
 
@@ -84,6 +92,10 @@ export default function CheckoutContent() {
         }
 
         setItems(cartData.items || []);
+
+        if (hoursRes.ok) {
+          setKioskStatus(hoursData);
+        }
       } catch {
         setError('Something went wrong while loading checkout.');
         setItems([]);
@@ -106,6 +118,9 @@ export default function CheckoutContent() {
    * Continue to payment
    */
   function handleContinueToPayment() {
+    // Prevent proceeding if kiosk is closed
+    if (!kioskStatus.isOpen) return;
+
     if (!items.length || !pickupName.trim() || !pickupTime) return;
 
     const params = new URLSearchParams({
@@ -186,6 +201,17 @@ export default function CheckoutContent() {
         </CardContent>
       </Card>
 
+      {/* Kiosk open/closed status */}
+      <div
+        className={`rounded-xl border p-3 text-sm font-medium ${
+          kioskStatus.isOpen
+            ? 'border-green-500/20 bg-green-500/10 text-green-700'
+            : 'border-red-500/20 bg-red-500/10 text-red-700'
+        }`}
+      >
+        {kioskStatus.message}
+      </div>
+
       {/* Pickup details */}
       <Card className="border-border/60 bg-card/70 coffee-card">
         <CardHeader>
@@ -213,6 +239,8 @@ export default function CheckoutContent() {
               type="time"
               required
               value={pickupTime}
+              min={kioskStatus.openTime || '00:00'}
+              max={kioskStatus.closeTime || '23:59'}
               onChange={(e) => setPickupTime(e.target.value)}
             />
           </div>
@@ -238,9 +266,13 @@ export default function CheckoutContent() {
             <Button
               className="sm:order-2"
               onClick={handleContinueToPayment}
-              disabled={!pickupName.trim() || !pickupTime}
+              disabled={
+                !pickupName.trim() || !pickupTime || !kioskStatus.isOpen
+              }
             >
-              {`Continue to payment · ${money(subtotal)}`}
+              {!kioskStatus.isOpen
+                ? 'Closed'
+                : `Continue to payment · ${money(subtotal)}`}
             </Button>
           </div>
         </CardContent>

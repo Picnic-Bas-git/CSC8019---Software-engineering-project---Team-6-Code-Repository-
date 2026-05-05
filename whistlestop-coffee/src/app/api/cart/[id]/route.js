@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/session';
 import { updateCartItemSchema } from '@/lib/validations/cart';
+import { getKioskOpenStatus } from '@/lib/business-hours';
 
 /*
   This route handles updates and deletion for a single cart item.
@@ -18,6 +19,18 @@ export async function PATCH(req, { params }) {
   try {
     // Ensure the user is signed in before modifying their cart
     const user = await requireUser();
+
+    // Check opening hours before allowing cart updates.
+    const openStatus = await getKioskOpenStatus();
+
+    if (!openStatus.isOpen) {
+      return NextResponse.json(
+        {
+          error: openStatus.message,
+        },
+        { status: 400 },
+      );
+    }
 
     // Extract the cart item ID from the route parameters
     const { id } = await params;

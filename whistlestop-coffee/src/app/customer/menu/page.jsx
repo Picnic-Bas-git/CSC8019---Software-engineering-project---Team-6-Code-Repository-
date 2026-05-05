@@ -84,6 +84,12 @@ export default function MenuPage() {
   // when they click "Choose a size" without selecting R or L first.
   const router = useRouter();
 
+  // Stores whether the kiosk is currently open and today's hours
+  const [kioskStatus, setKioskStatus] = useState({
+    isOpen: true,
+    message: '',
+  });
+
   // Holds menu items returned from the backend
   const [items, setItems] = useState([]);
 
@@ -137,7 +143,18 @@ export default function MenuPage() {
           return;
         }
 
-        // 3. Map items
+        // 3. Load kiosk open status
+        const statusRes = await fetch('/api/hours', {
+          cache: 'no-store',
+        });
+
+        const statusData = await statusRes.json();
+
+        if (statusRes.ok) {
+          setKioskStatus(statusData);
+        }
+
+        // 4. Map items
         const mappedItems = (data.items || []).map((item) => ({
           id: item.id,
           slug: item.slug,
@@ -249,6 +266,17 @@ export default function MenuPage() {
       {error ? <div className="text-sm text-red-500">{error}</div> : null}
       {success ? <div className="text-sm text-green-600">{success}</div> : null}
 
+      {/* Kiosk open/closed status */}
+      <div
+        className={`rounded-xl border p-3 text-sm font-medium ${
+          kioskStatus.isOpen
+            ? 'border-green-500/20 bg-green-500/10 text-green-700'
+            : 'border-red-500/20 bg-red-500/10 text-red-700'
+        }`}
+      >
+        {kioskStatus.message}
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {/* Render one card for each menu item */}
         {items.map((item) => (
@@ -278,12 +306,14 @@ export default function MenuPage() {
                 <SizePills
                   hasLarge={item.prices.large != null}
                   selectedSize={selectedSizes[item.id]}
-                  onSelectSize={(size) =>
+                  onSelectSize={(size) => {
+                    if (!kioskStatus.isOpen) return;
+
                     setSelectedSizes((prev) => ({
                       ...prev,
                       [item.id]: size,
-                    }))
-                  }
+                    }));
+                  }}
                 />
               </div>
             </Link>
@@ -310,9 +340,11 @@ export default function MenuPage() {
                   >
                     {addingId === item.id
                       ? 'Adding...'
-                      : selectedSizes[item.id]
-                        ? 'Add to cart'
-                        : 'Choose a size'}
+                      : !kioskStatus.isOpen
+                        ? 'Closed'
+                        : selectedSizes[item.id]
+                          ? 'Add to cart'
+                          : 'Choose a size'}
                   </Button>
                 </div>
               ) : isStaff ? (

@@ -14,8 +14,7 @@ import path from 'path';
 */
 
 // Load the SSL certificate used for secure database connection
-const caPath = path.join(process.cwd(), 'certs', 'aiven-ca.pem');
-const ca = fs.readFileSync(caPath, 'utf8');
+const ca = process.env.AIVEN_CA_CERT?.replace(/\\n/g, '\n');
 
 // Configure the mysql adapter using environment variables
 const adapter = new PrismaMariaDb({
@@ -35,6 +34,58 @@ const adapter = new PrismaMariaDb({
 
 // Create a Prisma client using the MariaDB adapter
 const prisma = new PrismaClient({ adapter });
+
+const DEFAULT_STATION = {
+  slug: 'whistlestop-kiosk',
+  name: 'Whistlestop Coffee Kiosk',
+  location: 'Train station kiosk',
+  isActive: true,
+};
+
+const OPENING_HOURS = [
+  {
+    dayOfWeek: 'MONDAY',
+    openTime: '06:30',
+    closeTime: '19:00',
+    isClosed: false,
+  },
+  {
+    dayOfWeek: 'TUESDAY',
+    openTime: '06:30',
+    closeTime: '19:00',
+    isClosed: false,
+  },
+  {
+    dayOfWeek: 'WEDNESDAY',
+    openTime: '06:30',
+    closeTime: '19:00',
+    isClosed: false,
+  },
+  {
+    dayOfWeek: 'THURSDAY',
+    openTime: '06:30',
+    closeTime: '19:00',
+    isClosed: false,
+  },
+  {
+    dayOfWeek: 'FRIDAY',
+    openTime: '06:30',
+    closeTime: '19:00',
+    isClosed: false,
+  },
+  {
+    dayOfWeek: 'SATURDAY',
+    openTime: '07:00',
+    closeTime: '18:00',
+    isClosed: false,
+  },
+  {
+    dayOfWeek: 'SUNDAY',
+    openTime: '00:00',
+    closeTime: '00:00',
+    isClosed: true,
+  },
+];
 
 const MENU_ITEMS = [
   {
@@ -159,11 +210,58 @@ async function seedMenuItems() {
   }
 }
 
+/**
+ * Seeds the default kiosk station and its editable weekly opening hours.
+ */
+async function seedStationAndOpeningHours() {
+  // Create or update the default kiosk station.
+  const station = await prisma.station.upsert({
+    where: {
+      slug: DEFAULT_STATION.slug,
+    },
+    update: {
+      name: DEFAULT_STATION.name,
+      location: DEFAULT_STATION.location,
+      isActive: DEFAULT_STATION.isActive,
+    },
+    create: DEFAULT_STATION,
+  });
+
+  // Create or update one opening-hours record per day.
+  for (const hour of OPENING_HOURS) {
+    await prisma.openingHour.upsert({
+      where: {
+        stationId_dayOfWeek: {
+          stationId: station.id,
+          dayOfWeek: hour.dayOfWeek,
+        },
+      },
+      update: {
+        openTime: hour.openTime,
+        closeTime: hour.closeTime,
+        isClosed: hour.isClosed,
+      },
+      create: {
+        stationId: station.id,
+        dayOfWeek: hour.dayOfWeek,
+        openTime: hour.openTime,
+        closeTime: hour.closeTime,
+        isClosed: hour.isClosed,
+      },
+    });
+  }
+
+  return station;
+}
+
 async function main() {
   await seedUsers();
   await seedMenuItems();
+  await seedStationAndOpeningHours();
 
-  console.log('Seeded admin, staff, and menu items successfully.');
+  console.log(
+    'Seeded admin, staff, opening hours and menu items successfully.',
+  );
 }
 
 main()

@@ -22,6 +22,12 @@ export default function CartPage() {
   // Holds the cart items returned by the backend
   const [items, setItems] = useState([]);
 
+  // Stores whether the kiosk is currently open and today's hours
+  const [kioskStatus, setKioskStatus] = useState({
+    isOpen: true,
+    message: '',
+  });
+
   // Tracks whether the cart is still loading
   const [isLoading, setIsLoading] = useState(true);
 
@@ -61,7 +67,22 @@ export default function CartPage() {
 
   // Load the cart once when the page first renders
   useEffect(() => {
-    loadCart();
+    async function loadData() {
+      await loadCart();
+
+      // Load kiosk open status
+      const res = await fetch('/api/hours', {
+        cache: 'no-store',
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setKioskStatus(data);
+      }
+    }
+
+    loadData();
   }, []);
 
   /**
@@ -221,6 +242,16 @@ export default function CartPage() {
         </CardHeader>
 
         <CardContent className="space-y-3">
+          {/* Kiosk open/closed status */}
+          <div
+            className={`rounded-xl border p-3 text-sm font-medium ${
+              kioskStatus.isOpen
+                ? 'border-green-500/20 bg-green-500/10 text-green-700'
+                : 'border-red-500/20 bg-red-500/10 text-red-700'
+            }`}
+          >
+            {kioskStatus.message}
+          </div>
           {/* Loading state while cart data is being fetched */}
           {isLoading ? (
             <div className="text-muted-foreground text-sm">Loading cart...</div>
@@ -326,11 +357,19 @@ export default function CartPage() {
               </div>
 
               {/* Proceed to checkout */}
-              <Link href="/customer/order" className="block">
-                <Button className="w-full" disabled={isUpdating}>
-                  Continue to checkout
-                </Button>
-              </Link>
+              {!kioskStatus.isOpen ? (
+                <div className="block">
+                  <Button className="w-full" disabled>
+                    Closed
+                  </Button>
+                </div>
+              ) : (
+                <Link href="/customer/order" className="block">
+                  <Button className="w-full" disabled={isUpdating}>
+                    Continue to checkout
+                  </Button>
+                </Link>
+              )}
             </div>
           ) : null}
         </CardContent>

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/session';
 import { createOrderSchema } from '@/lib/validations/order';
 import { processHorsePayPayment } from '@/lib/horsepay';
+import { getKioskOpenStatus } from '@/lib/business-hours';
 
 /*
   This route handles order creation and order history for the current user.
@@ -61,6 +62,18 @@ export async function GET() {
 export async function POST(req) {
   try {
     const user = await requireUser();
+
+    // Check opening hours before allowing checkout.
+    const openStatus = await getKioskOpenStatus();
+
+    if (!openStatus.isOpen) {
+      return NextResponse.json(
+        {
+          error: openStatus.message,
+        },
+        { status: 400 },
+      );
+    }
 
     const body = await req.json();
     const parsed = createOrderSchema.safeParse(body);

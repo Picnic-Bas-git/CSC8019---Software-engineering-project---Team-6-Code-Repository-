@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/session';
 import { addToCartSchema } from '@/lib/validations/cart';
+import { getKioskOpenStatus } from '@/lib/business-hours';
 
 /*
   This route handles the current signed-in user's cart.
@@ -94,6 +95,19 @@ export async function POST(req) {
   try {
     // Ensure the user is signed in before modifying their cart
     const user = await requireUser();
+
+    // Check opening hours before allowing the customer to add anything to cart.
+    // This prevents orders being started while the kiosk is closed.
+    const openStatus = await getKioskOpenStatus();
+
+    if (!openStatus.isOpen) {
+      return NextResponse.json(
+        {
+          error: openStatus.message,
+        },
+        { status: 400 },
+      );
+    }
 
     // Read and validate the submitted cart data
     const body = await req.json();
