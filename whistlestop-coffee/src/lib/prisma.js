@@ -11,7 +11,7 @@ import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import 'dotenv/config';
 
 const globalForPrisma = globalThis;
-
+// Saved in .env
 const ca = process.env.AIVEN_CA_CERT;
 
 if (!ca) {

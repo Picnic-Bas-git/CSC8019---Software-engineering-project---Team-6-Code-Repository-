@@ -9,6 +9,10 @@ import { loginSchema } from '@/lib/validations/auth';
   It validates the submitted login data, checks whether the user exists,
   verifies the password, creates a JWT token for authentication, and
   stores the token in a secure cookie for future requests.
+
+  Referred to: https://medium.com/@balogunkehinde3/backend-authentication-with-next-js-prisma-jwt-cookies-and-middleware-31596ac93ae6
+  https://www.youtube.com/watch?v=DJvM2lSPn6w
+  
 */
 
 export async function POST(req) {

@@ -7,7 +7,7 @@ import './globals.css';
 // Theme provider used for light and dark mode support
 import { ThemeProvider } from '@/components/theme-provider';
 
-// Configure the main sans-serif font
+// Configure the main font
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -27,7 +27,7 @@ export const metadata = {
     default: 'Whistlestop Coffee Hut',
 
     // Template used when child pages set a title
-    // Example: "Cart | Whistlestop Coffee Hut"
+    // Eg: "Cart | Whistlestop Coffee Hut"
     template: '%s | Whistlestop Coffee Hut',
   },
 

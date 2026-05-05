@@ -7,6 +7,8 @@ import { requireStaffOrAdmin } from '@/lib/session';
 
   It returns all non-archived orders, including customer details
   and order items, sorted from newest to oldest.
+
+  Referred to: https://nextjs.org/docs/app/getting-started/route-handlers
 */
 
 export async function GET() {

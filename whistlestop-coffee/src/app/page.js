@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 // Next.js router for client-side navigation
 import { useRouter } from 'next/navigation';
 
+// Nice loading screen
 export default function SplashPage() {
   // Router instance used to redirect the user after the splash screen
   const router = useRouter();

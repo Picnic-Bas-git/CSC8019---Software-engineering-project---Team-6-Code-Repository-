@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 
 /**
  * Formats a number into GBP currency.
- * Example: 3.5 -> £3.50
  */
 function money(n) {
   return `£${n.toFixed(2)}`;
@@ -289,7 +288,7 @@ export default function CartPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        /* Fallback decorative background when no image is available */
+                        /* Fallback decorative background when no image is available. we mostly used this at the beginning before adding images */
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(184,120,82,0.35),transparent_55%),radial-gradient(circle_at_80%_30%,rgba(216,180,154,0.35),transparent_55%)] opacity-60" />
                       )}
                     </div>

@@ -88,6 +88,7 @@ export default function AppShell({
       }
     }
 
+    // Loads the number of items in cart
     async function loadCartCount() {
       try {
         const cartRes = await fetch('/api/cart');
@@ -111,6 +112,7 @@ export default function AppShell({
       loadCartCount();
     }
 
+    // calls the above functions
     loadUser();
     loadCartCount();
 
@@ -124,8 +126,6 @@ export default function AppShell({
   /**
    * Returns true when the current route matches the given href
    * or is a nested route under it.
-   * Example:
-   * /customer/menu/latte is active for /customer/menu
    */
   const isActive = (href) =>
     pathname === href || pathname.startsWith(href + '/');

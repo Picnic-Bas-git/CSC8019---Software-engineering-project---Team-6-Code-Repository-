@@ -19,7 +19,6 @@ import Link from 'next/link';
 
 /**
  * Formats a number into GBP currency.
- * Example: 3.5 -> £3.50
  */
 function money(n) {
   return `£${n.toFixed(2)}`;
@@ -88,7 +87,6 @@ function getStatusActions(status) {
   }
 }
 
-// shows late orders
 // shows late orders only after they are ready for collection
 function isLate(order) {
   if (!order.pickupTime) return false;

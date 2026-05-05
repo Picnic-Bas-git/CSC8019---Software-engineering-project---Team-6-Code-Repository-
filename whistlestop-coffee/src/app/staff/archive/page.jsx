@@ -15,7 +15,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
  * Formats a number into GBP currency.
- * Example: 3.5 -> £3.50
  */
 function money(n) {
   return `£${n.toFixed(2)}`;

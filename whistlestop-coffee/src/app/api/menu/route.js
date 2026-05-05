@@ -6,7 +6,10 @@ import { prisma } from '@/lib/prisma';
 
   It supports optional filtering by category and search text,
   while only returning items that are currently available.
-  The route can be extended later to support station-specific menus.
+
+  Referred to: https://www.youtube.com/watch?v=YeFzkC2awTM
+  https://nextjs.org/docs/app/getting-started/route-handlers
+  https://www.youtube.com/watch?v=5miHyP6lExg
 */
 
 export async function GET(req) {

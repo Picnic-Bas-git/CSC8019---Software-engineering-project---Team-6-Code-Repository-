@@ -129,7 +129,7 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    // Handle normal status transitions (PREPARING, READY, etc.)
+    // Handle normal status transitions
     const updateData = { status };
 
     if (isArchived !== undefined) {

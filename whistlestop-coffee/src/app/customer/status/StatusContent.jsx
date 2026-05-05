@@ -16,20 +16,17 @@ import { Button } from '@/components/ui/button';
   - viewing a specific order via query parameters
   - viewing recent orders
   - displaying order details, status, and items
-
-  It fetches data from backend API routes and updates the UI accordingly.
 */
 
 /**
  * Formats a number into GBP currency.
- * Example: 3.5 -> £3.50
  */
 function money(n) {
   return `£${n.toFixed(2)}`;
 }
 
 /**
- * Converts backend order status values into friendlier text.
+ * Converts backend order status values into user friendly text.
  */
 function statusLabel(status) {
   switch (status) {
@@ -51,7 +48,7 @@ function statusLabel(status) {
 }
 
 /**
- * Helpful customer-facing message for each order status.
+ * Helpful customer facing message for each order status.
  */
 function statusMessage(status) {
   switch (status) {
@@ -73,7 +70,7 @@ function statusMessage(status) {
 }
 
 export default function StatusContent() {
-  // Read possible order identifiers from the query string
+  // Read possible order identifiers from the query params
   const searchParams = useSearchParams();
   const placedOrderId = searchParams.get('placed');
   const orderId = searchParams.get('orderId');
@@ -101,7 +98,7 @@ export default function StatusContent() {
     if (!selectedOrder?.items?.length) return;
 
     try {
-      setError('');
+      setError(''); //blank error at start
 
       for (const item of selectedOrder.items) {
         const res = await fetch('/api/cart', {
@@ -124,10 +121,51 @@ export default function StatusContent() {
         }
       }
 
-      window.dispatchEvent(new Event('cart-updated'));
+      window.dispatchEvent(new Event('cart-updated')); // updates the cart widget
       window.location.href = '/customer/cart';
     } catch {
       setError('Something went wrong while adding this order to your cart.');
+    }
+  }
+
+  /**
+   * Cancels the currently selected order.
+   */
+  async function handleCancelOrder() {
+    if (!selectedOrder?.id) return;
+
+    try {
+      setError(''); // blank error state
+
+      const res = await fetch('/api/orders/cancel', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: selectedOrder.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to cancel order');
+        return;
+      }
+      // if the order exists change specific fields
+      setSelectedOrder((current) =>
+        current
+          ? {
+              ...current,
+              status: data.order.status,
+              cancelledAt: data.order.cancelledAt,
+              cancellationReason: data.order.cancellationReason,
+            }
+          : current,
+      );
+    } catch {
+      setError('Something went wrong while cancelling the order.');
     }
   }
 
@@ -237,7 +275,7 @@ export default function StatusContent() {
             </div>
           ) : null}
 
-          {/* Empty state */}
+          {/* Empty, no past orders */}
           {!isLoading && !error && !selectedOrder ? (
             <div className="space-y-3">
               <div className="text-muted-foreground text-sm">
@@ -348,6 +386,17 @@ export default function StatusContent() {
               <div className="text-muted-foreground text-sm">
                 {statusMessage(selectedOrder.status)}
               </div>
+
+              {/* Customer cancellation. */}
+              {['PENDING', 'ACCEPTED'].includes(selectedOrder.status) ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleCancelOrder}
+                >
+                  Cancel order
+                </Button>
+              ) : null}
 
               {/* Navigation buttons */}
               <div className="flex flex-col gap-2 sm:flex-row">

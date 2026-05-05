@@ -21,8 +21,9 @@ import { getKioskOpenStatus } from '@/lib/business-hours';
   - stores loyalty redemption if used
   - clears the user's cart
 
-  Loyalty earning is not handled here.
-  A customer earns loyalty only when staff marks the order as collected.
+    Referred to: https://www.youtube.com/watch?v=YeFzkC2awTM
+  https://nextjs.org/docs/app/getting-started/route-handlers
+  https://www.youtube.com/watch?v=5miHyP6lExg
 */
 
 //Helper functions to validate time
@@ -186,6 +187,7 @@ export async function POST(req) {
       };
     });
 
+    // This section required a lot of troubleshooing
     // Apply free item loyalty discount if the customer has enough collected orders
     let discountAmount = 0;
 
@@ -206,6 +208,7 @@ export async function POST(req) {
       }
 
       // Make the cheapest single item free
+      // We are a cheap coffee shop :)
       const cheapestItem = orderItemsData.reduce((cheapest, item) =>
         item.priceAtTime < cheapest.priceAtTime ? item : cheapest,
       );
@@ -221,7 +224,6 @@ export async function POST(req) {
       currencyCode: 'GBP',
     });
 
-    // HorsePay docs use this exact key name
     const paymentResult = paymentResponse?.paymetSuccess;
     const paymentSucceeded = paymentResult?.Status === true;
     const paymentReason = paymentResult?.reason || 'Unknown payment result';
@@ -304,8 +306,7 @@ export async function POST(req) {
         return newOrder;
       },
       {
-        // Aiven MySQL is remote, so the sequential writes can exceed Prisma's
-        // default 5s interactive transaction timeout and surface as P2028.
+        // Aiven MySQL is remote and on free slow version, so we need to raise the timeout to prevent failure
         maxWait: 10000,
         timeout: 20000,
       },

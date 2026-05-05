@@ -13,6 +13,10 @@ import { getKioskOpenStatus } from '@/lib/business-hours';
 
   DELETE:
   - removes the cart item from the user's cart
+
+  Referred to: https://www.youtube.com/watch?v=YeFzkC2awTM
+  https://nextjs.org/docs/app/getting-started/route-handlers
+  https://www.youtube.com/watch?v=5miHyP6lExg
 */
 
 export async function PATCH(req, { params }) {
@@ -103,6 +107,7 @@ export async function PATCH(req, { params }) {
           (quantity ?? existingCartItem.quantity) + matchingItem.quantity;
 
         // Use a transaction to ensure both operations succeed together
+        // AI helped explain what a transaction is and how to fix duplicate addition of items to cart
         const updated = await prisma.$transaction(async (tx) => {
           const merged = await tx.cartItem.update({
             where: { id: matchingItem.id },

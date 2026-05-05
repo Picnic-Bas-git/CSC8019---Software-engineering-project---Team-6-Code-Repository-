@@ -13,6 +13,10 @@ import { getKioskOpenStatus } from '@/lib/business-hours';
   POST:
   - adds a new item to the cart
   - if the same item and size already exist, quantity is increased
+
+  Referred to: https://www.youtube.com/watch?v=YeFzkC2awTM
+  https://nextjs.org/docs/app/getting-started/route-handlers
+  https://www.youtube.com/watch?v=5miHyP6lExg
 */
 
 export async function GET() {
@@ -97,7 +101,7 @@ export async function POST(req) {
     const user = await requireUser();
 
     // Check opening hours before allowing the customer to add anything to cart.
-    // This prevents orders being started while the kiosk is closed.
+    // prevents orders being started while the kiosk is closed.
     const openStatus = await getKioskOpenStatus();
 
     if (!openStatus.isOpen) {

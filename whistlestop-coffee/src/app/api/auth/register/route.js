@@ -9,6 +9,10 @@ import { registerSchema } from '@/lib/validations/auth';
   It validates the submitted data, checks whether the email already exists,
   hashes the user's password for security, creates the new user in the
   database, and returns an appropriate JSON response.
+
+   Referred to: https://medium.com/@balogunkehinde3/backend-authentication-with-next-js-prisma-jwt-cookies-and-middleware-31596ac93ae6
+  https://www.youtube.com/watch?v=DJvM2lSPn6w
+  https://nextjs.org/docs/app/getting-started/route-handlers
 */
 
 export async function POST(req) {

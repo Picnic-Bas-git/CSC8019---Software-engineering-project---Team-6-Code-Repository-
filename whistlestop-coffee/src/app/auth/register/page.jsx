@@ -165,7 +165,7 @@ export default function RegisterPage() {
         <CardHeader className="pb-2">
           <CardTitle>Create account</CardTitle>
           <p className="text-muted-foreground text-sm">
-            Track orders and collect loyalty stamps.
+            Track orders and collect loyalty points.
           </p>
         </CardHeader>
 
