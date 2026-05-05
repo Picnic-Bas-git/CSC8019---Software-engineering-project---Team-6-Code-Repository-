@@ -48,6 +48,29 @@ function statusLabel(status) {
 }
 
 /**
+ *
+ * Was advised during trade fair that it would be good to have color coding for statuses
+ */
+function statusClasses(status) {
+  switch (status) {
+    case 'PENDING':
+      return 'border-yellow-300 bg-yellow-100 text-yellow-800';
+    case 'ACCEPTED':
+      return 'border-blue-300 bg-blue-100 text-blue-800';
+    case 'PREPARING':
+      return 'border-orange-300 bg-orange-100 text-orange-800';
+    case 'READY':
+      return 'border-green-300 bg-green-100 text-green-800';
+    case 'COLLECTED':
+      return 'border-slate-300 bg-slate-100 text-slate-700';
+    case 'CANCELLED':
+      return 'border-red-300 bg-red-100 text-red-800';
+    default:
+      return 'border-border bg-background text-foreground';
+  }
+}
+
+/**
  * Returns the next valid status actions available to staff.
  */
 function getStatusActions(status) {
@@ -281,7 +304,10 @@ export default function StaffDashboardPage() {
 
                   <div className="text-right">
                     <div className="text-muted-foreground text-xs">Status</div>
-                    <div className="font-semibold">
+                    {/*implemeted after trade fair based on user recommendations, easy as we use tailwind*/}
+                    <div
+                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(order.status)}`}
+                    >
                       {statusLabel(order.status)}
                     </div>
                   </div>
@@ -389,6 +415,7 @@ export default function StaffDashboardPage() {
                         key={status}
                         type="button"
                         variant="outline"
+                        className={statusClasses(status)}
                         disabled={updatingOrderId === order.id}
                         onClick={() => handleStatusUpdate(order.id, status)}
                       >
