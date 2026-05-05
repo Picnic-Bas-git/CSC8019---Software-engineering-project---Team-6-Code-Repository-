@@ -80,40 +80,6 @@ export default function AddToCartPanel({ item }) {
   // Calculate the total price based on selected size and quantity
   const total = unitPrice * qty;
 
-  async function handleQuickAdd(item) {
-    try {
-      setAddingId(item.id);
-      setError('');
-      setSuccess('');
-
-      const res = await fetch('/api/cart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          menuItemId: item.id,
-          size: 'REGULAR',
-          quantity: 1,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || 'Failed to add item to cart');
-        return;
-      }
-
-      setSuccess(`${item.name} added to cart`);
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      setError('Something went wrong while adding to cart.');
-    } finally {
-      setAddingId(null);
-    }
-  }
-
   /**
    * Adds the chosen item to the real backend cart.
    * Sends one request with menu item id, selected size, and quantity.
@@ -220,7 +186,7 @@ export default function AddToCartPanel({ item }) {
           variant="outline"
           className="w-full"
           disabled={addingId === item.id}
-          onClick={() => handleQuickAdd(item)}
+          onClick={addToCart}
         >
           {addingId === item.id ? 'Adding...' : 'Add to cart'}
         </Button>
