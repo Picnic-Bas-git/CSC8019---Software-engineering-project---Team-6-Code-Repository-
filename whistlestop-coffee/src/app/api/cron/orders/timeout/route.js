@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 /**
  * POST /api/cron/orders/timeout
  * Cron job: Sweep and cancel ready orders 15 minutes past their pickup time.
+ * Had to raise cron time as we are on hobby plan on vercel
+ * Used to check item status
  */
 export async function POST() {
   try {

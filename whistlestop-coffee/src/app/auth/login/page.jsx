@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
-  // Router lets us redirect the user after login
+  // Router redirects the user after login
   const router = useRouter();
 
   // Tracks whether the form is currently being submitted

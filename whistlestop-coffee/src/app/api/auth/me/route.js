@@ -7,6 +7,11 @@ import { getCurrentUser } from '@/lib/session';
   It checks whether a valid authenticated user exists in the current session.
   If a user is found, their details are returned. If not, an unauthorized
   response is sent back to the client.
+
+  Referred to: https://medium.com/@balogunkehinde3/backend-authentication-with-next-js-prisma-jwt-cookies-and-middleware-31596ac93ae6
+  https://www.youtube.com/watch?v=DJvM2lSPn6w
+  
+  
 */
 
 export async function GET() {
