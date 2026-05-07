@@ -92,7 +92,7 @@ Make sure you have:
 ### Clone the Repository
 
         git clone https://github.com/Picnic-Bas-git/CSC8019---Software-engineering-project---Team-6-Code-Repository-.git
-        cd csc8019-team6/whistlestop-coffee
+        cd CSC8019---Software-engineering-project---Team-6-Code-Repository-/whistlestop-coffee
 
 ### Install Dependencies
         
