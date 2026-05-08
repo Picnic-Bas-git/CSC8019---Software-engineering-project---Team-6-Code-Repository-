@@ -1,0 +1,221 @@
+<mxfile host="app.diagrams.net" modified="2026-05-08T00:00:00.000Z" agent="5.0" etag="abc123" version="24.0.0" type="device">
+  <diagram id="erd-database" name="ERD Database">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- USER Table -->
+        <mxCell id="USER" value="USER" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- CART_ITEM Table -->
+        <mxCell id="CART_ITEM" value="CART_ITEM" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER Table -->
+        <mxCell id="ORDER" value="ORDER" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- LOYALTY_RECORD Table -->
+        <mxCell id="LOYALTY_RECORD" value="LOYALTY_RECORD" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="650" y="50" width="130" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- NOTIFICATION Table -->
+        <mxCell id="NOTIFICATION" value="NOTIFICATION" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="150" width="120" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- AUDIT_LOG Table -->
+        <mxCell id="AUDIT_LOG" value="AUDIT_LOG" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="150" width="110" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- STATION Table -->
+        <mxCell id="STATION" value="STATION" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="150" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- OPENING_HOUR Table -->
+        <mxCell id="OPENING_HOUR" value="OPENING_HOUR" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="650" y="150" width="130" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- STATION_MENU_ITEM Table -->
+        <mxCell id="STATION_MENU_ITEM" value="STATION_MENU_ITEM" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="250" width="140" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- TRAIN_SCHEDULE Table -->
+        <mxCell id="TRAIN_SCHEDULE" value="TRAIN_SCHEDULE" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="250" width="130" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- MENU_ITEM Table -->
+        <mxCell id="MENU_ITEM" value="MENU_ITEM" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="250" width="110" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER_ITEM Table -->
+        <mxCell id="ORDER_ITEM" value="ORDER_ITEM" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="650" y="250" width="110" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- PAYMENT_RECORD Table -->
+        <mxCell id="PAYMENT_RECORD" value="PAYMENT_RECORD" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="350" width="140" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- TRAIN_SELECTION Table -->
+        <mxCell id="TRAIN_SELECTION" value="TRAIN_SELECTION" style="rounded=1;arcSize=10;dashed=0;strokeColor=#000000;fillColor=#fffacd;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="350" width="140" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Relationships/Connectors -->
+        <!-- USER - CART_ITEM -->
+        <mxCell id="rel1" value="has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="USER" target="CART_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- USER - ORDER -->
+        <mxCell id="rel2" value="places" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="USER" target="ORDER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- USER - LOYALTY_RECORD -->
+        <mxCell id="rel3" value="earns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="USER" target="LOYALTY_RECORD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- USER - NOTIFICATION -->
+        <mxCell id="rel4" value="receives" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="USER" target="NOTIFICATION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- USER - AUDIT_LOG -->
+        <mxCell id="rel5" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="USER" target="AUDIT_LOG">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- STATION - OPENING_HOUR -->
+        <mxCell id="rel6" value="has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="STATION" target="OPENING_HOUR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- STATION - STATION_MENU_ITEM -->
+        <mxCell id="rel7" value="offers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="STATION" target="STATION_MENU_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- STATION - ORDER -->
+        <mxCell id="rel8" value="fulfills" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="STATION" target="ORDER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- STATION - TRAIN_SCHEDULE -->
+        <mxCell id="rel9" value="has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="STATION" target="TRAIN_SCHEDULE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- MENU_ITEM - CART_ITEM -->
+        <mxCell id="rel10" value="added_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="MENU_ITEM" target="CART_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- MENU_ITEM - ORDER_ITEM -->
+        <mxCell id="rel11" value="purchased_as" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="MENU_ITEM" target="ORDER_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- MENU_ITEM - STATION_MENU_ITEM -->
+        <mxCell id="rel12" value="available_at" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="MENU_ITEM" target="STATION_MENU_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- CART_ITEM - USER -->
+        <mxCell id="rel13" value="belongs_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="CART_ITEM" target="USER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- CART_ITEM - MENU_ITEM -->
+        <mxCell id="rel14" value="references" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="CART_ITEM" target="MENU_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER - USER -->
+        <mxCell id="rel15" value="placed_by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER" target="USER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER - STATION -->
+        <mxCell id="rel16" value="fulfilled_at" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER" target="STATION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER - ORDER_ITEM -->
+        <mxCell id="rel17" value="contains" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER" target="ORDER_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER - PAYMENT_RECORD -->
+        <mxCell id="rel18" value="has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER" target="PAYMENT_RECORD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER - TRAIN_SELECTION -->
+        <mxCell id="rel19" value="includes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER" target="TRAIN_SELECTION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER - NOTIFICATION -->
+        <mxCell id="rel20" value="generates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER" target="NOTIFICATION">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER_ITEM - MENU_ITEM -->
+        <mxCell id="rel21" value="references" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER_ITEM" target="MENU_ITEM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- ORDER_ITEM - ORDER -->
+        <mxCell id="rel22" value="belongs_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ORDER_ITEM" target="ORDER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- PAYMENT_RECORD - ORDER -->
+        <mxCell id="rel23" value="records" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="PAYMENT_RECORD" target="ORDER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- TRAIN_SELECTION - ORDER -->
+        <mxCell id="rel24" value="selects" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="TRAIN_SELECTION" target="ORDER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- NOTIFICATION - USER -->
+        <mxCell id="rel25" value="notifies" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="NOTIFICATION" target="USER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- NOTIFICATION - ORDER -->
+        <mxCell id="rel26" value="related_to" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="NOTIFICATION" target="ORDER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- LOYALTY_RECORD - USER -->
+        <mxCell id="rel27" value="for" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="LOYALTY_RECORD" target="USER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- AUDIT_LOG - USER -->
+        <mxCell id="rel28" value="by" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AUDIT_LOG" target="USER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
