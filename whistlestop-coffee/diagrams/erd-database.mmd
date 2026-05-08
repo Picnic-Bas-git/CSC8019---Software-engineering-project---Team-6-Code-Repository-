@@ -1,0 +1,39 @@
+erDiagram
+    USER ||--o{ CART_ITEM : has
+    USER ||--o{ ORDER : places
+    USER ||--o{ LOYALTY_RECORD : earns
+    USER ||--o{ NOTIFICATION : receives
+    USER ||--o{ AUDIT_LOG : creates
+    
+    STATION ||--o{ OPENING_HOUR : has
+    STATION ||--o{ STATION_MENU_ITEM : offers
+    STATION ||--o{ ORDER : fulfills
+    STATION ||--o{ TRAIN_SCHEDULE : has
+    
+    MENU_ITEM ||--o{ CART_ITEM : added_to
+    MENU_ITEM ||--o{ ORDER_ITEM : purchased_as
+    MENU_ITEM ||--o{ STATION_MENU_ITEM : available_at
+    
+    CART_ITEM ||--o| USER : belongs_to
+    CART_ITEM ||--o| MENU_ITEM : references
+    
+    ORDER ||--o| USER : placed_by
+    ORDER ||--o| STATION : fulfilled_at
+    ORDER ||--o{ ORDER_ITEM : contains
+    ORDER ||--o| PAYMENT_RECORD : has
+    ORDER ||--o| TRAIN_SELECTION : includes
+    ORDER ||--o{ NOTIFICATION : generates
+    
+    ORDER_ITEM ||--o| MENU_ITEM : references
+    ORDER_ITEM ||--o| ORDER : belongs_to
+    
+    PAYMENT_RECORD ||--o| ORDER : records
+    
+    TRAIN_SELECTION ||--o| ORDER : selects
+    
+    NOTIFICATION ||--o| USER : notifies
+    NOTIFICATION ||--o| ORDER : related_to
+    
+    LOYALTY_RECORD ||--o| USER : for
+    
+    AUDIT_LOG ||--o| USER : by

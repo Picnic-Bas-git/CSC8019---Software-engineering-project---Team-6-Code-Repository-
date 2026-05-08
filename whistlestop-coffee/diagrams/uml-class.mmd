@@ -1,0 +1,296 @@
+classDiagram
+    class User {
+        -String id
+        -String name
+        -String email*
+        -String phone
+        -String passwordHash
+        -Role role
+        -Int loyaltyPoints
+        -Int loyaltyStamps
+        -DateTime createdAt
+        -DateTime updatedAt
+        +addToCart()
+        +placeOrder()
+        +updateLoyalty()
+        +getNotifications()
+    }
+
+    class Station {
+        -String id
+        -String name
+        -String slug*
+        -String location
+        -Boolean isActive
+        -DateTime createdAt
+        -DateTime updatedAt
+        +getOpeningHours()
+        +getMenuItems()
+        +getOrders()
+        +getTrainSchedules()
+    }
+
+    class MenuItem {
+        -String id
+        -String name
+        -String slug*
+        -String description
+        -Category category
+        -String imageUrl
+        -Float priceRegular
+        -Float priceLarge
+        -Boolean isAvailable
+        -DateTime createdAt
+        -DateTime updatedAt
+        +getStationAvailability()
+        +updatePrice()
+    }
+
+    class StationMenuItem {
+        -String id
+        -String stationId
+        -String menuItemId
+        -Boolean isAvailable
+        -Int stockCount
+        -DateTime updatedAt
+        +updateAvailability()
+        +updateStock()
+    }
+
+    class CartItem {
+        -String id
+        -String userId
+        -String menuItemId
+        -Size size
+        -Int quantity
+        -DateTime createdAt
+        -DateTime updatedAt
+        +addItem()
+        +removeItem()
+        +updateQuantity()
+    }
+
+    class Order {
+        -String id
+        -String userId
+        -String stationId
+        -Float totalAmount
+        -OrderStatus status
+        -DateTime pickupTime
+        -DateTime cancelledAt
+        -String cancellationReason
+        -Boolean isArchived
+        -DateTime archivedAt
+        -DateTime createdAt
+        -DateTime updatedAt
+        +placeOrder()
+        +cancelOrder()
+        +updateStatus()
+        +archive()
+    }
+
+    class OrderItem {
+        -String id
+        -String orderId
+        -String menuItemId
+        -String nameAtTime
+        -Float priceAtTime
+        -Size size
+        -Int quantity
+        +getHistoricalInfo()
+    }
+
+    class LoyaltyRecord {
+        -String id
+        -String userId
+        -String orderId
+        -LoyaltyRecordType type
+        -Int pointsChange
+        -Int stampsChange
+        -String description
+        -DateTime createdAt
+        +earnPoints()
+        +redeemPoints()
+    }
+
+    class PaymentRecord {
+        -String id
+        -String orderId*
+        -String provider
+        -Float amount
+        -String currency
+        -PaymentStatus status
+        -String transactionRef
+        -DateTime paidAt
+        -DateTime createdAt
+        -DateTime updatedAt
+        +processPayment()
+        +refundPayment()
+    }
+
+    class OpeningHour {
+        -String id
+        -String stationId
+        -DayOfWeek dayOfWeek
+        -String openTime
+        -String closeTime
+        -Boolean isClosed
+        +isOpen()
+        +getHours()
+    }
+
+    class TrainSchedule {
+        -String id
+        -String stationId
+        -String lineName
+        -String destination
+        -DateTime departureTime
+        -String platform
+        -DateTime createdAt
+        -DateTime updatedAt
+        +getSchedules()
+    }
+
+    class TrainSelection {
+        -String id
+        -String orderId*
+        -String lineName
+        -String destination
+        -DateTime departureAt
+        -String platform
+        -DateTime createdAt
+        -DateTime updatedAt
+        +selectTrain()
+    }
+
+    class Notification {
+        -String id
+        -String userId
+        -String orderId
+        -NotificationType type
+        -String title
+        -String message
+        -Boolean isRead
+        -DateTime createdAt
+        +sendNotification()
+        +markAsRead()
+    }
+
+    class AuditLog {
+        -String id
+        -String userId
+        -String action
+        -String entityType
+        -String entityId
+        -Json metadata
+        -DateTime createdAt
+        +logAction()
+        +getAuditTrail()
+    }
+
+    class Role {
+        <<enumeration>>
+        CUSTOMER
+        STAFF
+        ADMIN
+    }
+
+    class Size {
+        <<enumeration>>
+        REGULAR
+        LARGE
+    }
+
+    class Category {
+        <<enumeration>>
+        COFFEE
+        TEA
+        PASTRY
+        SNACK
+        COLD_DRINK
+        CHOCOLATE
+    }
+
+    class OrderStatus {
+        <<enumeration>>
+        PENDING
+        ACCEPTED
+        PREPARING
+        READY
+        COLLECTED
+        CANCELLED
+    }
+
+    class DayOfWeek {
+        <<enumeration>>
+        MONDAY
+        TUESDAY
+        WEDNESDAY
+        THURSDAY
+        FRIDAY
+        SATURDAY
+        SUNDAY
+    }
+
+    class LoyaltyRecordType {
+        <<enumeration>>
+        EARN
+        REDEEM
+        ADJUSTMENT
+    }
+
+    class PaymentStatus {
+        <<enumeration>>
+        PENDING
+        PAID
+        FAILED
+        REFUNDED
+    }
+
+    class NotificationType {
+        <<enumeration>>
+        ORDER_CREATED
+        ORDER_UPDATED
+        ORDER_READY
+        ORDER_CANCELLED
+        LOYALTY_UPDATED
+    }
+
+    %% Relationships
+    User --> Role
+    User --> CartItem
+    User --> Order
+    User --> LoyaltyRecord
+    User --> Notification
+    User --> AuditLog
+    
+    Station --> OpeningHour
+    Station --> StationMenuItem
+    Station --> Order
+    Station --> TrainSchedule
+    
+    MenuItem --> StationMenuItem
+    MenuItem --> CartItem
+    MenuItem --> OrderItem
+    
+    StationMenuItem --> Size
+    CartItem --> Size
+    MenuItem --> Category
+    
+    Order --> OrderStatus
+    Order --> OrderItem
+    Order --> PaymentRecord
+    Order --> TrainSelection
+    Order --> Notification
+    
+    OrderItem --> Size
+    
+    PaymentRecord --> PaymentStatus
+    
+    TrainSelection --> Order
+    
+    OpeningHour --> DayOfWeek
+    
+    Notification --> NotificationType
+    
+    LoyaltyRecord --> LoyaltyRecordType
